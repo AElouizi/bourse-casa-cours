@@ -1,0 +1,93 @@
+name: 🔄 Actualisation cours Bourse de Casablanca
+
+on:
+  schedule:
+    # Tous les jours de semaine à 16h30 (heure Maroc = UTC+1 → 15h30 UTC)
+    # La séance de la Bourse de Casablanca ferme à 15h30
+    - cron: '30 15 * * 1-5'
+    # Aussi à 10h00 UTC (11h Maroc) pour cours d'ouverture
+    - cron: '0 9 * * 1-5'
+  
+  # Permettre le lancement manuel depuis GitHub
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Raison du lancement manuel'
+        required: false
+        default: 'Actualisation manuelle'
+
+jobs:
+  update-cours:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write  # Pour pousser cours.json
+
+    steps:
+      - name: 📥 Checkout du repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 📦 Installer les dépendances
+        run: |
+          pip install playwright requests
+          playwright install chromium --with-deps
+
+      - name: 🕐 Vérifier si c'est un jour de bourse
+        id: check_day
+        run: |
+          python3 -c "
+          from datetime import datetime, timezone, timedelta
+          # Heure Maroc (UTC+1)
+          now = datetime.now(timezone(timedelta(hours=1)))
+          day = now.weekday()  # 0=Lundi, 6=Dimanche
+          hour = now.hour
+          print(f'Jour: {now.strftime(\"%A %d/%m/%Y\")}, Heure Maroc: {hour}h{now.minute:02d}')
+          # Bourse fermée le weekend
+          if day >= 5:
+              print('SKIP=true')
+              open('skip.txt', 'w').write('weekend')
+          else:
+              print('SKIP=false')
+              open('skip.txt', 'w').write('ok')
+          "
+          echo "SKIP=$(cat skip.txt)" >> $GITHUB_OUTPUT
+
+      - name: 📈 Scraper les cours
+        if: steps.check_day.outputs.SKIP == 'ok'
+        run: python3 scraper.py
+        timeout-minutes: 5
+
+      - name: 📊 Afficher le résultat
+        if: steps.check_day.outputs.SKIP == 'ok'
+        run: |
+          echo "=== cours.json généré ==="
+          cat data/cours.json | python3 -m json.tool | head -30
+
+      - name: 💾 Committer et pousser cours.json
+        if: steps.check_day.outputs.SKIP == 'ok'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/cours.json
+          # Commit seulement si le fichier a changé
+          if git diff --staged --quiet; then
+            echo "Aucun changement détecté"
+          else
+            COUNT=$(python3 -c "import json; d=json.load(open('data/cours.json')); print(d['count'])")
+            DATE=$(python3 -c "import json; d=json.load(open('data/cours.json')); print(d['date'])")
+            git commit -m "📈 Cours Bourse Casa — $DATE ($COUNT valeurs)"
+            git push
+            echo "✓ cours.json mis à jour et poussé"
+          fi
+
+      - name: ⏭ Bourse fermée (weekend)
+        if: steps.check_day.outputs.SKIP != 'ok'
+        run: echo "Weekend — pas d'actualisation"
