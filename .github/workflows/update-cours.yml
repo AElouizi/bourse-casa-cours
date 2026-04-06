@@ -2,9 +2,8 @@ name: Actualisation cours Bourse de Casablanca
 
 on:
   schedule:
-    - cron: '30 15 * * 1-5'
-    - cron: '0 9 * * 1-5'
-  workflow_dispatch:
+    - cron: '0 16 * * 1-5'   # 17h00 Maroc (UTC+1) = 16h00 UTC, lundi-vendredi
+  workflow_dispatch:            # Lancement manuel possible
 
 jobs:
   update-cours:
@@ -47,4 +46,5 @@ jobs:
             DATE=$(python3 -c "import json; print(json.load(open('data/cours.json'))['date'])")
             git commit -m "Cours $DATE - $COUNT valeurs"
             git push
+            echo "Pousse avec $COUNT cours"
           fi
