@@ -1,240 +1,176 @@
 #!/usr/bin/env python3
 """
 Scraper cours Bourse de Casablanca — CDG Capital Bourse
-Récupère les cours depuis cdgcapitalbourse.ma/Bourse/market
-et génère un fichier cours.json consommable par le tableau de bord.
+Strategie : intercepter les requetes reseau pour capturer l'API JSON interne
 """
 
-import json
-import sys
-import time
-import re
+import json, sys, time, re
 from datetime import datetime
 from pathlib import Path
 
 try:
-    from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
+    from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
 except ImportError:
-    print("Installation de playwright...")
     import subprocess
     subprocess.run([sys.executable, "-m", "pip", "install", "playwright"], check=True)
     subprocess.run([sys.executable, "-m", "playwright", "install", "chromium", "--with-deps"], check=True)
-    from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
+    from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
 
-
-URL = "https://www.cdgcapitalbourse.ma/Bourse/market"
 OUTPUT = Path(__file__).parent / "data" / "cours.json"
+URL    = "https://www.cdgcapitalbourse.ma/Bourse/market"
 
+NAME_KEYS  = {"ticker","symbol","code","libelle","name","valeur","instrument",
+              "shortname","fullname","isin","mnemo","mnemonic"}
+PRICE_KEYS = {"cours","price","lastprice","dernier","last","close","cloture",
+              "prixdernier","last_price","currentprice","settlementprice",
+              "referenceprice","cours_dernier","coursdernier"}
 
-def scrape_cours():
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Ouverture de {URL}")
+def extract_prices(obj, depth=0):
+    found = {}
+    if depth > 8: return found
+    if isinstance(obj, list):
+        for item in obj:
+            found.update(extract_prices(item, depth+1))
+    elif isinstance(obj, dict):
+        low = {k.lower(): v for k, v in obj.items()}
+        name = next((str(low[k]).strip().upper()
+                     for k in NAME_KEYS if k in low and low[k]), None)
+        price = None
+        for k in PRICE_KEYS:
+            if k in low and low[k] not in (None, "", 0, "0"):
+                try:
+                    price = float(str(low[k]).replace(",",".").replace(" ",""))
+                    if price > 0: break
+                except: pass
+        if name and price and 1 <= price <= 200000 and 2 <= len(name) <= 50:
+            found[name] = price
+        for v in obj.values():
+            found.update(extract_prices(v, depth+1))
+    return found
+
+def scrape():
+    print(f"[{datetime.now():%H:%M:%S}] Lancement Playwright -> {URL}")
+    captured = {}
+    cours    = {}
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
-            args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+            args=["--no-sandbox","--disable-setuid-sandbox",
+                  "--disable-dev-shm-usage","--disable-gpu"]
         )
-        context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            viewport={"width": 1280, "height": 800}
+        ctx = browser.new_context(
+            user_agent=("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 Chrome/120 Safari/537.36"),
+            viewport={"width":1440,"height":900},
+            extra_http_headers={"Accept-Language":"fr-FR,fr;q=0.9"}
         )
-        page = context.new_page()
+        page = ctx.new_page()
 
-        # Intercepter les requêtes réseau pour trouver l'API JSON
-        api_data = {}
+        def on_response(resp):
+            url = resp.url
+            if any(url.endswith(ext) for ext in
+                   [".js",".css",".png",".jpg",".woff",".svg",".ico"]): return
+            try:
+                ct = resp.headers.get("content-type","")
+                if "json" not in ct and "text/plain" not in ct: return
+                body = resp.json()
+                captured[url] = body
+                prices = extract_prices(body)
+                if prices:
+                    print(f"  OK {len(prices)} cours depuis: {url[:70]}")
+                    cours.update(prices)
+            except: pass
 
-        def handle_response(response):
-            url = response.url
-            if any(kw in url.lower() for kw in ["market", "cours", "quote", "instrument", "action"]):
-                if response.status == 200:
-                    ct = response.headers.get("content-type", "")
-                    if "json" in ct:
-                        try:
-                            body = response.json()
-                            api_data[url] = body
-                            print(f"  → API JSON interceptée: {url[:80]}")
-                        except:
-                            pass
-
-        page.on("response", handle_response)
+        page.on("response", on_response)
 
         try:
-            page.goto(URL, wait_until="networkidle", timeout=60000)
-        except PlaywrightTimeout:
-            print("Timeout networkidle, on continue...")
+            page.goto(URL, wait_until="domcontentloaded", timeout=45000)
+        except PWTimeout:
+            print("  timeout domcontentloaded, on continue...")
 
-        # Attendre que le tableau se charge
-        time.sleep(5)
+        print("  Attente chargement React (30s max)...")
+        for i in range(30):
+            time.sleep(1)
+            if cours:
+                print(f"  Donnees trouvees apres {i+1}s")
+                break
+            if i == 5:
+                try: page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                except: pass
+            if i == 10:
+                try:
+                    for sel in ["button:has-text('Actions')", "a:has-text('Actions')",
+                                "button:has-text('March')", "[href*='market']"]:
+                        btn = page.query_selector(sel)
+                        if btn:
+                            print(f"  Clic sur: {sel}")
+                            btn.click()
+                            time.sleep(3)
+                            break
+                except: pass
 
-        # Si on a intercepté des données API, les utiliser
-        cours = {}
-        if api_data:
-            for url, data in api_data.items():
-                print(f"  Analyse de: {url[:60]}")
-                extracted = extract_from_api(data)
-                if extracted:
-                    cours.update(extracted)
-                    print(f"  {len(extracted)} cours extraits depuis l'API")
-
-        # Sinon, scraper le DOM
         if not cours:
-            print("  Pas d'API JSON, scraping du DOM...")
-            cours = scrape_dom(page)
+            print(f"  Pas d'API JSON. URLs capturees ({len(captured)}):")
+            for u in list(captured.keys())[:20]:
+                print(f"    {u[:90]}")
+            print("  Tentative DOM scraping...")
+            cours = dom_scrape(page)
 
         browser.close()
-        return cours
-
-
-def extract_from_api(data):
-    """Tente d'extraire les cours d'une réponse API JSON."""
-    cours = {}
-    
-    # Chercher récursivement les structures avec ticker/cours
-    def search(obj, depth=0):
-        if depth > 5:
-            return
-        if isinstance(obj, list):
-            for item in obj:
-                search(item, depth + 1)
-        elif isinstance(obj, dict):
-            # Chercher des clés typiques
-            name_keys = ["ticker", "symbol", "code", "libelle", "name", "valeur", "instrument"]
-            price_keys = ["cours", "price", "lastPrice", "dernier", "last", "close", "cloture"]
-            
-            name = None
-            price = None
-            
-            for k in name_keys:
-                for key in obj.keys():
-                    if k.lower() in key.lower() and obj[key]:
-                        name = str(obj[key]).strip().upper()
-                        break
-            
-            for k in price_keys:
-                for key in obj.keys():
-                    if k.lower() in key.lower() and obj[key]:
-                        try:
-                            price = float(str(obj[key]).replace(",", ".").replace(" ", ""))
-                            break
-                        except:
-                            pass
-            
-            if name and price and price > 0:
-                cours[name] = price
-            
-            for v in obj.values():
-                search(v, depth + 1)
-    
-    search(data)
     return cours
 
-
-def scrape_dom(page):
-    """Scrape les cours directement depuis le DOM."""
+def dom_scrape(page):
     cours = {}
-    
     try:
-        # Attendre qu'un tableau apparaisse
-        page.wait_for_selector("table, .market-table, [class*='table'], [class*='grid']", timeout=15000)
-    except:
-        print("  Aucun tableau trouvé")
-
-    # Extraire tout le texte de la page et chercher les patterns NOM + COURS
-    content = page.content()
-    
-    # Pattern: nom d'action suivi d'un cours en MAD
-    # Ex: "ATTIJARIWAFA BANK 690,00 MAD" ou "ATW 690.00"
-    patterns = [
-        r'([A-Z][A-Z\s&\-\.]{2,30})\s+(\d{1,6}[,\.]\d{2})\s*(?:MAD)?',
-        r'"(?:libelle|name|ticker|symbol)"\s*:\s*"([^"]+)"\s*[^}]*"(?:cours|price|lastPrice|dernier)"\s*:\s*([\d,\.]+)',
-    ]
-    
-    for pattern in patterns:
-        matches = re.findall(pattern, content, re.IGNORECASE)
-        for name, price_str in matches:
-            name = name.strip().upper()
-            if len(name) < 2 or len(name) > 40:
-                continue
-            try:
-                price = float(price_str.replace(",", ".").replace(" ", ""))
-                if 1 <= price <= 100000:
-                    cours[name] = price
-            except:
-                pass
-
-    # Essayer aussi via JavaScript d'extraire les données du tableau
-    try:
-        js_cours = page.evaluate("""
+        result = page.evaluate("""
         () => {
             const result = {};
-            const rows = document.querySelectorAll('tr, [class*="row"]');
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td, [class*="cell"]');
-                if (cells.length >= 2) {
-                    const name = cells[0]?.textContent?.trim().toUpperCase();
-                    const priceText = cells[1]?.textContent?.trim().replace(/[, ]/g, (m) => m === ',' ? '.' : '');
-                    const price = parseFloat(priceText);
-                    if (name && price > 0 && name.length > 1 && name.length < 40) {
-                        result[name] = price;
+            document.querySelectorAll('table').forEach(tbl => {
+                tbl.querySelectorAll('tr').forEach(row => {
+                    const cells = Array.from(row.querySelectorAll('td, th'));
+                    if (cells.length < 2) return;
+                    const name = cells[0]?.innerText?.trim().toUpperCase();
+                    if (!name || name.length < 2 || name.length > 50) return;
+                    for (let i = 1; i < cells.length; i++) {
+                        const txt = cells[i]?.innerText?.trim()
+                            .replace(/\\s/g,'').replace(',','.');
+                        const n = parseFloat(txt);
+                        if (n > 1 && n < 200000) { result[name] = n; break; }
                     }
-                }
+                });
             });
             return result;
         }
         """)
-        if js_cours:
-            cours.update(js_cours)
-            print(f"  {len(js_cours)} cours via JS DOM")
+        if result:
+            cours = {k: v for k, v in result.items() if len(k) >= 2 and v > 0}
+            print(f"  DOM: {len(cours)} cours trouves")
     except Exception as e:
-        print(f"  JS DOM error: {e}")
-
+        print(f"  DOM error: {e}")
     return cours
 
-
-def save_cours(cours):
-    """Sauvegarde les cours en JSON."""
+def save(cours):
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    
-    output = {
-        "date": datetime.now().strftime("%Y-%m-%d"),
-        "time": datetime.now().strftime("%H:%M"),
+    out = {
+        "date":   datetime.now().strftime("%Y-%m-%d"),
+        "time":   datetime.now().strftime("%H:%M"),
         "source": "CDG Capital Bourse",
-        "count": len(cours),
-        "cours": cours
+        "count":  len(cours),
+        "cours":  cours
     }
-    
-    with open(OUTPUT, "w", encoding="utf-8") as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
-    
-    print(f"\n✓ {len(cours)} cours sauvegardés dans {OUTPUT}")
-    return output
-
-
-def main():
-    try:
-        cours = scrape_cours()
-        
-        if not cours:
-            print("⚠ Aucun cours récupéré — marché fermé ou site inaccessible")
-            # Créer un fichier vide pour signaler l'échec
-            save_cours({})
-            sys.exit(0)
-        
-        print(f"\n{len(cours)} cours récupérés:")
-        for name, price in list(cours.items())[:10]:
-            print(f"  {name}: {price}")
-        if len(cours) > 10:
-            print(f"  ... et {len(cours)-10} autres")
-        
-        save_cours(cours)
-        
-    except Exception as e:
-        print(f"✗ Erreur: {e}")
-        import traceback
-        traceback.print_exc()
-        save_cours({})
-        sys.exit(1)
-
+    OUTPUT.write_text(json.dumps(out, ensure_ascii=False, indent=2))
+    print(f"\nSauvegarde: {len(cours)} cours -> {OUTPUT}")
+    for k, v in list(cours.items())[:8]:
+        print(f"   {k}: {v}")
+    return out
 
 if __name__ == "__main__":
-    main()
+    try:
+        cours = scrape()
+        save(cours)
+    except Exception as e:
+        print(f"Erreur: {e}")
+        import traceback; traceback.print_exc()
+        save({})
+        sys.exit(1)
