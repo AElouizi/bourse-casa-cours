@@ -307,6 +307,22 @@
     border: 1px solid var(--border);
   }
 
+  .table-wrap-outer {
+    position: relative;
+  }
+
+  /* Scrollbar horizontale dupliquée en haut (sous les titres) */
+  .table-scroll-top {
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 12px;
+    margin-bottom: -1px;
+  }
+
+  .table-scroll-top-inner {
+    height: 1px;
+  }
+
   .table-scroll { overflow-x: auto; overflow-y: auto; max-height: 65vh; }
 
   table {
@@ -923,7 +939,8 @@
         <span class="table-title">Valeurs cotées</span>
         <span class="count-badge" id="rowCount">28 valeurs</span>
       </div>
-      <div class="table-scroll">
+      <div class="table-scroll-top" id="tableScrollTop"><div class="table-scroll-top-inner" id="tableScrollTopInner"></div></div>
+      <div class="table-scroll" id="tableScrollMain">
         <table id="mainTable">
           <thead>
             <tr>
@@ -931,7 +948,6 @@
               <th onclick="sortByCol('ticker')" data-col="ticker">Ticker <span class="sort-arrow" id="sort-ticker"></span></th>
               <th onclick="sortByCol('secteur')" data-col="secteur">Secteur <span class="sort-arrow" id="sort-secteur"></span></th>
               <th class="num" onclick="sortByCol('nb_titres')" data-col="nb_titres">Nb Titres <span class="sort-arrow" id="sort-nb_titres"></span></th>
-              <th class="num" onclick="sortByCol('poids')" data-col="poids">Poids <span class="sort-arrow" id="sort-poids"></span></th>
               <th class="num" onclick="sortByCol('div25')" data-col="div25">Div 2025<br><span class="th-unit">(MAD)</span> <span class="sort-arrow" id="sort-div25"></span></th>
               <th class="num" onclick="sortByCol('poids_masi')" data-col="poids_masi">Poids MASI <span class="sort-arrow" id="sort-poids_masi"></span></th>
               <th class="num" onclick="sortByCol('cours')" data-col="cours">Cours<br><span class="th-unit">(MAD)</span> <span class="sort-arrow" id="sort-cours"></span></th>
@@ -1250,7 +1266,6 @@ function renderTable() {
         <td class="ticker">${d.ticker}</td>
         <td>${sectorTag}</td>
         <td class="num">${d.nb_titres != null ? Math.round(d.nb_titres).toLocaleString('fr-FR') : '—'}</td>
-        <td class="num">${d.poids != null ? (d.poids*100).toFixed(2)+'%' : '—'}</td>
         <td class="num">${d.div25 != null ? d.div25.toLocaleString('fr-FR', {minimumFractionDigits:1,maximumFractionDigits:1}) : '—'}</td>
         <td class="num">${d.poids_masi != null ? (d.poids_masi*100).toFixed(2)+'%' : '—'}</td>
         <td class="num">${fmtCours(d.cours)}</td>
@@ -1348,34 +1363,46 @@ function buildCharts() {
       </div>`;
   }).join('');
 
-  // PE chart : PE 2025 uniquement, trié croissant
-  const peData = [...RAW_DATA].filter(d => d.pe25).sort((a,b) => a.pe25 - b.pe25);
-  const maxPE = Math.max(...peData.map(d => d.pe25));
-  document.getElementById('peChart').innerHTML = peData.map(d => {
-    const pct = (d.pe25 / maxPE * 100).toFixed(1);
+  // PE chart : 2 groupes — normaux (<=60x) et extrêmes (>60x)
+  const peAll = [...RAW_DATA].filter(d => d.pe25 && d.pe25 > 0).sort((a,b) => a.pe25 - b.pe25);
+  const peNorm = peAll.filter(d => d.pe25 <= 60);
+  const peExt  = peAll.filter(d => d.pe25 > 60);
+  const maxPENorm = peNorm.length ? Math.max(...peNorm.map(d=>d.pe25)) : 1;
+  const maxPEExt  = peExt.length  ? Math.max(...peExt.map(d=>d.pe25))  : 1;
+
+  function peRow(d, maxVal) {
+    const pct = (d.pe25 / maxVal * 100).toFixed(1);
     const col = d.pe25 <= 15 ? '#00e5a0' : d.pe25 <= 25 ? '#ffd32a' : '#ff4757';
-    return '<div class="bar-row">' +
-      '<span class="bar-label">' + d.ticker + '</span>' +
+    return '<div class="bar-row"><span class="bar-label">' + d.ticker + '</span>' +
       '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + col + '">' + d.pe25.toFixed(1) + 'x</div></div>' +
       '<span class="bar-val">' + d.pe25.toFixed(1) + 'x</span></div>';
-  }).join('');
+  }
 
-  // Var RNPG — toutes les valeurs sans filtre ni troncature
-  const varData = RAW_DATA.map(d => ({...d, varR: varRNPG(d)})).filter(d => d.varR !== null).sort((a,b) => b.varR - a.varR);
-  const maxVar = Math.max(...varData.map(d=>Math.abs(d.varR)));
-  document.getElementById('varChart').innerHTML = varData.map(d => {
-    const pct = (Math.abs(d.varR) / maxVar * 100).toFixed(1);
+  document.getElementById('peChart').innerHTML =
+    peNorm.map(d => peRow(d, maxPENorm)).join('') +
+    (peExt.length ? '<div style="border-top:1px dashed var(--border);margin:8px 0;padding-top:6px;font-size:10px;color:var(--warning)">⚠ Valeurs extrêmes (échelle distincte)</div>' +
+      peExt.map(d => peRow(d, maxPEExt)).join('') : '');
+
+  // Var RNPG — 2 groupes : normaux ([-200%,+200%]) et extrêmes
+  const varAll = RAW_DATA.map(d => ({...d, varR: varRNPG(d)})).filter(d => d.varR !== null).sort((a,b) => b.varR - a.varR);
+  const varNorm = varAll.filter(d => Math.abs(d.varR) <= 200);
+  const varExt  = varAll.filter(d => Math.abs(d.varR) > 200);
+  const maxVarN = varNorm.length ? Math.max(...varNorm.map(d=>Math.abs(d.varR))) : 1;
+  const maxVarE = varExt.length  ? Math.max(...varExt.map(d=>Math.abs(d.varR)))  : 1;
+
+  function varRow(d, maxVal) {
+    const pct = (Math.abs(d.varR) / maxVal * 100).toFixed(1);
     const color = d.varR >= 0 ? '#00e5a0' : '#ff4757';
     const sign = d.varR >= 0 ? '+' : '';
-    return `
-      <div class="bar-row">
-        <span class="bar-label">${d.ticker}</span>
-        <div class="bar-track">
-          <div class="bar-fill" style="width:${pct}%; background:${color}">${sign}${d.varR.toFixed(0)}%</div>
-        </div>
-        <span class="bar-val" style="color:${color}">${sign}${d.varR.toFixed(0)}%</span>
-      </div>`;
-  }).join('');
+    return '<div class="bar-row"><span class="bar-label">' + d.ticker + '</span>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + color + '">' + sign + d.varR.toFixed(0) + '%</div></div>' +
+      '<span class="bar-val" style="color:' + color + '">' + sign + d.varR.toFixed(0) + '%</span></div>';
+  }
+
+  document.getElementById('varChart').innerHTML =
+    varNorm.map(d => varRow(d, maxVarN)).join('') +
+    (varExt.length ? '<div style="border-top:1px dashed var(--border);margin:8px 0;padding-top:6px;font-size:10px;color:var(--warning)">⚠ Valeurs extrêmes (échelle distincte)</div>' +
+      varExt.map(d => varRow(d, maxVarE)).join('') : '');
 
   // Donut by sector
   const bySector = {};
@@ -1491,7 +1518,6 @@ function exportExcel() {
     'PE 2025 (harmonique·RNPG25)': d.pe25,
     'DY 2024 (%)': d.dy24 != null ? parseFloat((d.dy24*100).toFixed(2)) : null,
     'Nb Titres': d.nb_titres != null ? Math.round(d.nb_titres) : null,
-    'Poids (%)': d.poids != null ? parseFloat((d.poids*100).toFixed(4)) : null,
     'Div 2025 (MAD)': d.div25,
     'Poids MASI (%)': d.poids_masi != null ? parseFloat((d.poids_masi*100).toFixed(4)) : null,
     'DY 2025 (%)': d.dy25 != null ? parseFloat((d.dy25*100).toFixed(2)) : null
@@ -1826,6 +1852,31 @@ function configureUrl() {
 // Charger automatiquement au démarrage si URL configurée
 // Pas de chargement automatique au démarrage — données Excel affichées par défaut
 // Le bouton ▶ permet de charger les cours mis à jour depuis GitHub
+
+// Synchronisation scrollbar horizontale dupliquée
+(function initDualScroll() {
+  const top = document.getElementById('tableScrollTop');
+  const main = document.getElementById('tableScrollMain');
+  const inner = document.getElementById('tableScrollTopInner');
+  if (!top || !main || !inner) return;
+
+  // Ajuster la largeur du faux scrollbar = largeur réelle du tableau
+  function syncWidth() {
+    const table = document.getElementById('mainTable');
+    if (table) inner.style.width = table.scrollWidth + 'px';
+  }
+  syncWidth();
+  window.addEventListener('resize', syncWidth);
+
+  // Synchroniser les deux scrollbars
+  top.addEventListener('scroll', () => { main.scrollLeft = top.scrollLeft; });
+  main.addEventListener('scroll', () => { top.scrollLeft = main.scrollLeft; });
+
+  // Mettre à jour après rendu du tableau
+  const observer = new MutationObserver(syncWidth);
+  const tbody = document.getElementById('tableBody');
+  if (tbody) observer.observe(tbody, { childList: true });
+})();
 
 // INIT — restaurer les cours sauvegardés si disponibles
 (function restoreSavedCours() {
