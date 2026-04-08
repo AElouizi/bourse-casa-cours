@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bourse de Casablanca — Tableau de Bord</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1c2535;
+    --border: #1e2d45;
+    --accent: #00e5a0;
+    --accent2: #0077ff;
+    --accent3: #ff6b35;
+    --text: #e8edf5;
+    --muted: #6b7a99;
+    --danger: #ff4757;
+    --success: #00e5a0;
+    --warning: #ffd32a;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0, 229, 160, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 229, 160, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 1600px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* HEADER */
+  header {
+    padding: 32px 0 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+
+  .header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .logo-area h1 {
+    font-family: var(--font-display);
+    font-size: clamp(22px, 3vw, 36px);
+    font-weight: 800;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+
+  .logo-area p {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .header-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* KPI CARDS */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .kpi-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent2);
+  }
+
+  .kpi-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  .kpi-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .kpi-value {
+    font-family: var(--font-display);
+    font-size: clamp(20px, 2vw, 28px);
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .kpi-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .kpi-extra {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+    letter-spacing: 0.3px;
+  }
+
+  /* CONTROLS */
+  .controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .search-box {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+  }
+
+  .search-box input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px 10px 40px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-box input:focus { border-color: var(--accent); }
+  .search-box input::placeholder { color: var(--muted); }
+
+  .search-icon {
+    position: absolute;
+    left: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .filter-select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .filter-select:focus { border-color: var(--accent); }
+
+  .btn-export {
+    background: linear-gradient(135deg, var(--accent) 0%, #00b87a 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    color: #000;
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: opacity 0.2s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .btn-export:hover { opacity: 0.9; transform: translateY(-1px); }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    width: fit-content;
+    margin-bottom: 24px;
+  }
+
+  .tab {
+    padding: 8px 18px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--muted);
+    border: none;
+    background: transparent;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .tab.active {
+    background: var(--accent2);
+    color: #fff;
+  }
+
+  /* TABLE */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .table-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table-title {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .count-badge {
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface2);
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+
+  .table-scroll { overflow-x: auto; overflow-y: auto; max-height: 65vh; }
+
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12px;
+  }
+
+  thead th {
+    background: var(--surface2);
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 10px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  thead th:hover { color: var(--accent); }
+  thead th.sorted { color: var(--accent); }
+
+
+
+  .th-unit {
+    font-size: 9px;
+    font-weight: 400;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    text-transform: none;
+    display: block;
+    margin-top: 2px;
+  }
+
+  .sort-arrow { margin-left: 4px; opacity: 0.5; }
+  .sort-arrow.active { opacity: 1; color: var(--accent); }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  tbody tr:hover { background: var(--surface2); }
+  tbody tr:last-child { border-bottom: none; }
+
+  td {
+    padding: 13px 14px;
+    white-space: nowrap;
+    color: var(--text);
+  }
+
+  /* ── COLONNES FIGÉES : Checkbox (col1) + Ticker (col2) ── */
+
+  /* Checkbox — col 1 */
+  td.excl-chk-cell {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--surface);
+    width: 36px;
+    min-width: 36px;
+    text-align: center;
+    padding: 0 8px !important;
+  }
+
+  tbody tr:hover td.excl-chk-cell { background: var(--surface2); }
+  tbody tr.excluded-row td.excl-chk-cell { opacity: 1; text-decoration: none; }
+
+  .excl-chk {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    accent-color: var(--danger);
+  }
+
+  /* Ticker — col 2 */
+  td.ticker {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--accent2);
+    position: sticky;
+    left: 36px;
+    z-index: 2;
+    background: var(--surface);
+  }
+
+  tbody tr:hover td.ticker { background: var(--surface2); }
+  tbody tr.excluded-row td.ticker { opacity: 0.4; text-decoration: line-through; text-decoration-color: var(--danger); }
+
+  /* Sticky headers col 1 et col 2 */
+  thead th:nth-child(1) {
+    position: sticky;
+    left: 0;
+    z-index: 11;
+    background: var(--surface2);
+    width: 36px;
+    min-width: 36px;
+    text-align: center;
+    padding: 0 8px;
+  }
+
+  thead th:nth-child(2) {
+    position: sticky;
+    left: 36px;
+    z-index: 11;
+    background: var(--surface2);
+  }
+
+  /* Ombre uniquement après le ticker (col 2) pour séparer visuellement */
+  td.ticker, thead th:nth-child(2) {
+    box-shadow: 4px 0 10px rgba(0,0,0,0.4);
+  }
+
+  .sector-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .pe-badge {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  .pe-low { background: rgba(0,229,160,0.12); color: var(--accent); }
+  .pe-mid { background: rgba(255,211,42,0.12); color: var(--warning); }
+  .pe-high { background: rgba(255,71,87,0.12); color: var(--danger); }
+
+  .var-positive { color: var(--success); }
+  .var-negative { color: var(--danger); }
+
+  /* CHARTS SECTION */
+  .charts-section {
+    display: none;
+    margin-bottom: 32px;
+  }
+
+  .charts-section.active { display: block; }
+
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 900px) {
+    .charts-grid { grid-template-columns: 1fr; }
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .chart-card h3 {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .bar-chart { width: 100%; }
+
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    cursor: default;
+  }
+
+  .bar-label {
+    width: 80px;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 22px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(0,0,0,0.8);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .bar-val {
+    width: 70px;
+    font-size: 11px;
+    color: var(--text);
+    text-align: right;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Donut chart */
+  .donut-wrap { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+  .donut-legend { flex: 1; min-width: 140px; }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 11px;
+    color: var(--text);
+  }
+
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .legend-pct {
+    margin-left: auto;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* TABLE VIEW hidden/shown */
+  .table-section { display: none; }
+  .table-section.active { display: block; }
+
+  /* Sector summary */
+  .sector-table { width: 100%; }
+  .sector-table td { padding: 10px 14px; }
+
+  .progress-mini {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 4px;
+    width: 100%;
+  }
+
+  .progress-mini-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  @media (max-width: 768px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .controls { flex-direction: column; align-items: stretch; }
+    .filter-select, .btn-export { width: 100%; justify-content: center; }
+  }
+
+  /* IMPORT ZONE */
+  .import-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .import-bar-label { font-size: 12px; color: var(--muted); letter-spacing: 0.5px; flex-shrink: 0; }
+  .import-bar-label span { color: var(--accent); font-weight: 600; }
+  .btn-import {
+    background: var(--surface2);
+    border: 1px dashed var(--accent2);
+    border-radius: 8px;
+    padding: 9px 18px;
+    color: var(--accent2);
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .btn-import:hover { background: rgba(0,119,255,0.12); border-style: solid; }
+  .import-status { font-size: 11px; color: var(--muted); flex: 1; min-width: 150px; }
+  .import-status.ok { color: var(--accent); }
+  .import-status.err { color: var(--danger); }
+  #fileInput { display: none; }
+  .drop-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,229,160,0.06);
+    border: 3px dashed var(--accent);
+    border-radius: 16px;
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--accent);
+    pointer-events: none;
+  }
+  .drop-overlay.visible { display: flex; }
+  /* LIVE COURS */
+  .live-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .live-bar-label {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-live {
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 8px 16px;
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-live:hover { background: rgba(0,229,160,0.1); }
+  .btn-live.active { background: var(--accent); color: #000; }
+
+  .live-cours-status {
+    font-size: 11px;
+    color: var(--muted);
+    flex: 1;
+  }
+
+  .live-cours-status.ok { color: var(--accent); }
+  .live-cours-status.loading { color: var(--warning); }
+  .live-cours-status.warn { color: var(--warning); }
+  .live-cours-status.err { color: var(--danger); }
+
+
+  /* EXCLUSION PANEL */
+  .exclusion-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+
+  .exclusion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 0;
+  }
+
+  .exclusion-header.open { margin-bottom: 14px; }
+
+  .exclusion-title {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .exclusion-count {
+    font-size: 11px;
+    background: var(--accent3);
+    color: #fff;
+    border-radius: 20px;
+    padding: 2px 8px;
+    display: none;
+  }
+
+  .exclusion-count.visible { display: inline-block; }
+
+  .exclusion-toggle {
+    font-size: 11px;
+    color: var(--muted);
+    transition: transform 0.2s;
+  }
+
+  .exclusion-toggle.open { transform: rotate(180deg); }
+
+  .exclusion-body {
+    display: none;
+  }
+
+  .exclusion-body.open { display: block; }
+
+  .exclusion-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+
+  .excl-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 11px;
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+
+  .excl-item:hover { border-color: var(--accent2); }
+
+  .excl-item.excluded {
+    background: rgba(255,71,87,0.12);
+    border-color: var(--danger);
+    color: var(--danger);
+    text-decoration: line-through;
+  }
+
+  .excl-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .btn-excl {
+    font-size: 11px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 12px;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: var(--font-mono);
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .btn-excl:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .excl-tab {
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--muted);
+    border: none;
+    background: transparent;
+    transition: all 0.15s;
+  }
+
+  .excl-tab.active {
+    background: var(--accent2);
+    color: #fff;
+  }
+
+  .kpi-excluded-note {
+    font-size: 10px;
+    color: var(--danger);
+    margin-top: 4px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- DROP OVERLAY -->
+  <div class="drop-overlay" id="dropOverlay">📂 Déposer le fichier Excel ici</div>
+
+  <!-- IMPORT BAR -->
+  <div class="import-bar">
+    <span class="import-bar-label">📂 Actualiser données complètes : <span>glisse un fichier .xlsx</span> ou</span>
+    <button class="btn-import" onclick="document.getElementById('fileInput').click()">
+      ⬆ Charger un fichier Excel
+    </button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFileUpload(event)">
+    <span class="import-status" id="importStatus">Données intégrées · 6/4/2026 · 78 valeurs"header-inner">
+      <div class="logo-area">
+        <h1>BOURSE DE CASABLANCA</h1>
+        <p id="headerSub">Tableau de Bord · Valeurs Sélectionnées · 6 Avril 2026</p>
+      </div>
+      <div class="header-badge">
+        <span class="live-dot"></span>
+        <span id="headerBadge">78 valeurs · Données au 6/4/2026</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- BARRE COURS LIVE -->
+  <div class="live-bar">
+    <span class="live-bar-label">📡 Cours automatiques</span>
+    <button class="btn-live" id="btnLive" onclick="toggleLiveCours(this)">▶ Actualiser les cours</button>
+    <button class="btn-live" style="background:var(--surface2);color:var(--muted);border-color:var(--border)" onclick="configureUrl()" title="Configurer l'URL GitHub">⚙</button>
+    <span class="live-cours-status" id="liveStatus">Cours du fichier Excel · Cliquer ▶ pour charger la dernière mise à jour</span>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <!-- EXCLUSION PANEL — Secteurs uniquement -->
+  <div class="exclusion-panel" id="exclusionPanel">
+    <div class="exclusion-header" id="exclusionHeader" onclick="toggleExclusion()">
+      <span class="exclusion-title">
+        ⚙ Recalculer les métriques en excluant des secteurs
+        <span class="exclusion-count" id="exclusionCount">0 exclu(s)</span>
+      </span>
+      <span class="exclusion-toggle" id="exclusionToggle">▼</span>
+    </div>
+    <div class="exclusion-body" id="exclusionBody">
+      <div class="excl-actions">
+        <button class="btn-excl" onclick="clearExclusions()">✕ Tout réintégrer</button>
+        <span style="font-size:11px;color:var(--muted);align-self:center">Cliquer sur un secteur pour l'exclure des métriques</span>
+      </div>
+      <div class="exclusion-list" id="exclusionListSecteurs"></div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('table', this)">📊 Tableau</button>
+    <button class="tab" onclick="switchTab('charts', this)">📈 Graphiques</button>
+    <button class="tab" onclick="switchTab('secteurs', this)">🏢 Secteurs</button>
+  </div>
+
+  <!-- TABLE SECTION -->
+  <div id="section-table" class="table-section active">
+    <div class="controls">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Rechercher une valeur, secteur..." oninput="filterTable()">
+      </div>
+      <select class="filter-select" id="sectorFilter" onchange="filterTable()">
+        <option value="">Tous les secteurs</option>
+      </select>
+      <select class="filter-select" id="sortSelect" onchange="sortAndRender()">
+        <option value="">Trier par...</option>
+        <option value="cours">Cours (↓)</option>
+        <option value="capi">Capitalisation (↓)</option>
+        <option value="pe24_asc">PE 2024 (↑)</option>
+        <option value="pe24_desc">PE 2024 (↓)</option>
+        <option value="pe25_asc">PE 2025 (↑)</option>
+        <option value="pe25_desc">PE 2025 (↓)</option>
+        <option value="var">Variation RNPG (↓)</option>
+      </select>
+      <button class="btn-export" onclick="exportExcel()">
+        ⬇ Exporter Excel
+      </button>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-header-row">
+        <span class="table-title">Valeurs cotées</span>
+        <span class="count-badge" id="rowCount">28 valeurs</span>
+      </div>
+      <div class="table-scroll">
+        <table id="mainTable">
+          <thead>
+            <tr>
+              <th class="excl-chk-cell" title="Tout décocher"><input type="checkbox" class="excl-chk" id="uncheckAll" title="Tout décocher" onchange="uncheckAllRows(this)"></th>
+              <th onclick="sortByCol('ticker')" data-col="ticker">Ticker <span class="sort-arrow" id="sort-ticker"></span></th>
+              <th onclick="sortByCol('secteur')" data-col="secteur">Secteur <span class="sort-arrow" id="sort-secteur"></span></th>
+              <th class="num" onclick="sortByCol('nb_titres')" data-col="nb_titres">Nb Titres <span class="sort-arrow" id="sort-nb_titres"></span></th>
+              <th class="num" onclick="sortByCol('poids')" data-col="poids">Poids <span class="sort-arrow" id="sort-poids"></span></th>
+              <th class="num" onclick="sortByCol('div25')" data-col="div25">Div 2025<br><span class="th-unit">(MAD)</span> <span class="sort-arrow" id="sort-div25"></span></th>
+              <th class="num" onclick="sortByCol('poids_masi')" data-col="poids_masi">Poids MASI <span class="sort-arrow" id="sort-poids_masi"></span></th>
+              <th class="num" onclick="sortByCol('cours')" data-col="cours">Cours<br><span class="th-unit">(MAD)</span> <span class="sort-arrow" id="sort-cours"></span></th>
+              <th class="num" onclick="sortByCol('capi')" data-col="capi">Capitalisation<br><span class="th-unit">(MMAD)</span> <span class="sort-arrow" id="sort-capi"></span></th>
+              <th class="num" onclick="sortByCol('flottant')" data-col="flottant">Capi Flottante<br><span class="th-unit">(MMAD)</span> <span class="sort-arrow" id="sort-flottant"></span></th>
+              <th class="num" onclick="sortByCol('rnpg24')" data-col="rnpg24">RNPG 2024<br><span class="th-unit">(MMAD)</span> <span class="sort-arrow" id="sort-rnpg24"></span></th>
+              <th class="num" onclick="sortByCol('rnpg25')" data-col="rnpg25">RNPG 2025<br><span class="th-unit">(MMAD)</span> <span class="sort-arrow" id="sort-rnpg25"></span></th>
+              <th class="num" onclick="sortByCol('var')" data-col="var">Var RNPG <span class="sort-arrow" id="sort-var"></span></th>
+              <th class="num" onclick="sortByCol('ca24')" data-col="ca24">CA 2024<br><span class="th-unit">(MMAD)</span> <span class="sort-arrow" id="sort-ca24"></span></th>
+              <th class="num" onclick="sortByCol('ca25')" data-col="ca25">CA 2025<br><span class="th-unit">(MMAD)</span> <span class="sort-arrow" id="sort-ca25"></span></th>
+              <th class="num" onclick="sortByCol('pe24')" data-col="pe24">PE 2024 <span class="sort-arrow" id="sort-pe24"></span></th>
+              <th class="num" onclick="sortByCol('pe25')" data-col="pe25">PE 2025 <span class="sort-arrow" id="sort-pe25"></span></th>
+              <th class="num" onclick="sortByCol('dy24')" data-col="dy24">DY 2024 <span class="sort-arrow" id="sort-dy24"></span></th>
+              <th class="num" onclick="sortByCol('dy25')" data-col="dy25">DY 2025 <span class="sort-arrow" id="sort-dy25"></span></th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARTS SECTION -->
+  <div id="section-charts" class="charts-section">
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>Top 10 — Capitalisation (MMAD)</h3>
+        <div id="capiChart" class="bar-chart"></div>
+      </div>
+      <div class="chart-card">
+        <h3>PE 2025 par valeur (croissant)</h3>
+        <div id="peChart" class="bar-chart"></div>
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>Variation RNPG 2025/2024 (%)</h3>
+        <div id="varChart" class="bar-chart"></div>
+      </div>
+      <div class="chart-card">
+        <h3>Répartition par secteur (capitalisation)</h3>
+        <div id="donutChart"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTORS SECTION -->
+  <div id="section-secteurs" class="table-section">
+    <div class="table-wrap">
+      <div class="table-header-row">
+        <span class="table-title">Synthèse par secteur</span>
+        <button class="btn-export" onclick="exportExcel()" style="font-size:12px; padding:8px 14px;">⬇ Exporter</button>
+      </div>
+      <div class="table-scroll">
+        <table id="sectorTable">
+          <thead>
+            <tr>
+              <th>Secteur</th>
+              <th class="num">Nb valeurs</th>
+              <th class="num">Capi totale</th>
+              <th class="num">% du total</th>
+              <th class="num">RNPG 2025</th>
+              <th class="num">CA 2025</th>
+              <th class="num">PE 2024</th>
+              <th class="num">PE 2025</th>
+              <th class="num">DY 2024</th>
+              <th class="num">DY 2025</th>
+              <th>Poids</th>
+            </tr>
+          </thead>
+          <tbody id="sectorBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const RAW_DATA = [{"isin": "MA0000012445", "name": "ATW", "ticker": "ATW", "secteur": "Banque", "cours": 680.0, "cours_prec": 570.0, "nb_titres": 215140839.0, "capi": 146295770520.0, "flottant": 43888731156.0, "flottant2024": 36789083469.0, "rnpg24": 9504486000.0, "rnpg25": 10644000000.0, "ca24": 34507117000.0, "ca25": 34921384000.0, "div25": 22.0, "dy24": 0.027941176470588237, "dy25": 0.03235294117647059, "poids_masi": 0.16781858648598302, "poids24": 0.17741390311432773, "poids": 0.16781858648598302, "pe24_calc": 12.9}, {"isin": "MA0000012437", "name": "BOA", "ticker": "BOA", "secteur": "Banque", "cours": 203.0, "cours_prec": 190.040848, "nb_titres": 220281881.0, "capi": 44717221843.0, "flottant": 11179305460.75, "flottant2024": 10465638866.068773, "rnpg24": 3427420000.0, "rnpg25": 3813000000.0, "ca24": 18716574000.0, "ca25": 20348000000.0, "div25": 5.0, "dy24": 0.024630541871921183, "dy25": 0.024630541871921183, "poids_masi": 0.042746627457732195, "poids24": 0.050470130395578953, "poids": 0.0427466274577322, "pe24_calc": 12.21}, {"isin": "MA0000011884", "name": "BCP", "ticker": "BCP", "secteur": "Banque", "cours": 240.0, "cours_prec": 298.0, "nb_titres": 203312473.0, "capi": 48794993520.0, "flottant": 7319249028.0, "flottant2024": 12117423390.800001, "rnpg24": 4145346000.0, "rnpg25": 4501845756.0, "ca24": 25601207000.0, "ca25": 26983672178.0, "div25": 10.5, "dy24": 0.04375, "dy25": 0.04375, "poids_masi": 0.02798682016237656, "poids24": 0.05843579607690389, "poids": 0.027986820162376563, "pe24_calc": 14.62}, {"isin": "MA0000011454", "name": "CIH", "ticker": "CIH", "secteur": "Banque", "cours": 362.95, "cours_prec": 411.375536, "nb_titres": 35605624.0, "capi": 12923061230.8, "flottant": 3230765307.7, "flottant2024": 3661820664.403616, "rnpg24": 875878000.0, "rnpg25": 1089400000.0, "ca24": 4739507000.0, "ca25": 5422500000.0, "div25": 14.0, "dy24": 0.03857280617164899, "dy25": 0.03857280617164899, "poids_masi": 0.012353568966917935, "poids24": 0.017658985636975023, "poids": 0.012353568966917937, "pe24_calc": 16.72}, {"isin": "MA0000010381", "name": "CDM", "ticker": "CDM", "secteur": "Banque", "cours": 1025.0, "cours_prec": 1046.0, "nb_titres": 10881214.0, "capi": 11153244350.0, "flottant": 2788311087.5, "flottant2024": 2845437461.0, "rnpg24": 740949000.0, "rnpg25": 863551000.0, "ca24": 3303182000.0, "ca25": 3568401000.0, "div25": 48.0, "dy24": 0.040682926829268294, "dy25": 0.04682926829268293, "poids_masi": 0.01066174421229477, "poids24": 0.013722009857873056, "poids": 0.010661744212294771, "pe24_calc": 15.36}, {"isin": "MA0000010811", "name": "BMCI", "ticker": "BMCI", "secteur": "Banque", "cours": 620.0, "cours_prec": 585.0, "nb_titres": 13279286.0, "capi": 8233157320.0, "flottant": 1646631464.0, "flottant2024": 1553676462.0, "rnpg24": 325146000.0, "rnpg25": 419113194.0, "ca24": 3788722000.0, "ca25": 3940000000.0, "div25": 18.0, "dy24": 0.02903225806451613, "dy25": 0.02903225806451613, "poids_masi": 0.006296271445387803, "poids24": 0.00749254342072828, "poids": 0.006296271445387804, "pe24_calc": 23.89}, {"isin": "MA0000012627", "name": "CFG", "ticker": "CFG", "secteur": "Banque", "cours": 205.5, "cours_prec": 200.0, "nb_titres": 35007960.0, "capi": 7194135780.0, "flottant": 6115015412.999999, "flottant2024": 5601273600.0, "rnpg24": 261820000.0, "rnpg25": 370445000.0, "ca24": 941408000.0, "ca25": 1247229000.0, "div25": 4.0, "dy24": 0.016058394160583942, "dy25": 0.019464720194647202, "poids_masi": 0.023382157923455178, "poids24": 0.027011920876599472, "poids": 0.02338215792345518, "pe24_calc": 26.74}, {"isin": "MA0000011488", "name": "IAM", "ticker": "IAM", "secteur": "Télecommunication", "cours": 93.0, "cours_prec": 90.99, "nb_titres": 879095340.0, "capi": 81755866620.0, "flottant": 16351173324.000002, "flottant2024": 15997776997.32, "rnpg24": 5938000000.0, "rnpg25": 5649000000.0, "ca24": 36699000000.0, "ca25": 36681000000.0, "div25": 4.0, "dy24": 0.015376344086021504, "dy25": 0.043010752688172046, "poids_masi": 0.06252244533722087, "poids24": 0.07714864820263215, "poids": 0.06252244533722089, "pe24_calc": 13.47}, {"isin": "MA0000012320", "name": "LHM", "ticker": "LHM", "secteur": "Bâtiment et matériaux", "cours": 1749.0, "cours_prec": 1922.0, "nb_titres": 23431240.0, "capi": 40981238760.0, "flottant": 14343433566.0, "flottant2024": 13510452984.0, "rnpg24": 1825688000.0, "rnpg25": 2166000000.0, "ca24": 8154838000.0, "ca25": 8936000000.0, "div25": 96.0, "dy24": 0.040022870211549454, "dy25": 0.0548885077186964, "poids_masi": 0.05484539386308165, "poids24": 0.0651536263129202, "poids": 0.054845393863081654, "pe24_calc": 24.67}, {"isin": "MA0000010506", "name": "CIMAR", "ticker": "CIMAR", "secteur": "Bâtiment et matériaux", "cours": 1710.0, "cours_prec": 1830.0, "nb_titres": 14436004.0, "capi": 24685566840.0, "flottant": 8639948394.0, "flottant2024": 7925366196.0, "rnpg24": 1001000000.0, "rnpg25": 1402000000.0, "ca24": 4990000000.0, "ca25": 5349000000.0, "div25": 65.0, "dy24": 0.03508771929824561, "dy25": 0.038011695906432746, "poids_masi": 0.033036815797640076, "poids24": 0.03821976569836334, "poids": 0.03303681579764008, "pe24_calc": 26.39}, {"isin": "MA0000012528", "name": "TGCC", "ticker": "TGCC", "secteur": "Bâtiment et matériaux", "cours": 744.0, "cours_prec": 455.2, "nb_titres": 34674332.0, "capi": 25797703008.0, "flottant": 10319081203.2, "flottant2024": 4735126777.92, "rnpg24": 646000000.0, "rnpg25": 952000000.0, "ca24": 11745450000.0, "ca25": 12363640000.0, "div25": 15.0, "dy24": 0.015456989247311828, "dy25": 0.020161290322580645, "poids_masi": 0.03945736355876301, "poids24": 0.0228349620103975, "poids": 0.03945736355876301, "pe24_calc": 24.43}, {"isin": "MA0000012783", "name": "SGTM", "ticker": "SGTM", "secteur": "Bâtiment et matériaux", "cours": 717.0, "cours_prec": null, "nb_titres": 60000000.0, "capi": 43020000000.0, "flottant": 8604000000.0, "flottant2024": 0, "rnpg24": 783000000.0, "rnpg25": 1342000000.0, "ca24": 11098839000.0, "ca25": 15200000000.0, "div25": 12.0, "dy24": 0.0, "dy25": 0.016736401673640166, "poids_masi": 0.03289935890361236, "poids24": NaN, "poids": 0.03289935890361237, "pe24_calc": null}, {"isin": "MA0000010019", "name": "SONASID", "ticker": "SONASID", "secteur": "Bâtiment et matériaux", "cours": 1860.0, "cours_prec": 933.0, "nb_titres": 3900000.0, "capi": 7254000000.0, "flottant": 2538900000.0, "flottant2024": 1273544999.9999998, "rnpg24": 141238000.0, "rnpg25": 272000000.0, "ca24": 5494500000.0, "ca25": 6386000000.0, "div25": 52.0, "dy24": 0.020967741935483872, "dy25": 0.02795698924731183, "poids_masi": 0.009708063960992728, "poids24": 0.006141620500878384, "poids": 0.00970806396099273, "pe24_calc": 25.76}, {"isin": "MA0000012080", "name": "JET", "ticker": "JET", "secteur": "Bâtiment et matériaux", "cours": 2145.0, "cours_prec": 1650.0, "nb_titres": 3029522.0, "capi": 6498324690.0, "flottant": 2599329876.0, "flottant2024": 1999484520.0, "rnpg24": 133000000.0, "rnpg25": 225000000.0, "ca24": 3117729584.6, "ca25": 0.0, "div25": 20.0, "dy24": 0.006993006993006993, "dy25": 0.009324009324009324, "poids_masi": 0.009939131392306627, "poids24": 0.009642435186209343, "poids": 0.009939131392306629, "pe24_calc": 37.58}, {"isin": "MA0000011934", "name": "COLORADO", "ticker": "COLORADO", "secteur": "Bâtiment et matériaux", "cours": 81.76, "cours_prec": 52.0, "nb_titres": 16117611.0, "capi": 1317775875.3600001, "flottant": 461221556.376, "flottant2024": 293340520.2, "rnpg24": 45337135.25, "rnpg25": 65500000.0, "ca24": 605017873.46, "ca25": 624000000.0, "div25": 3.5, "dy24": 0.031800391389432484, "dy25": 0.04280821917808219, "poids_masi": 0.0017635859504064046, "poids24": 0.0014146230817117967, "poids": 0.0017635859504064049, "pe24_calc": 18.49}, {"isin": "MA0000010936", "name": "ALM", "ticker": "ALM", "secteur": "Bâtiment et matériaux", "cours": 1796.0, "cours_prec": 1409.0, "nb_titres": 465954.0, "capi": 836853384.0, "flottant": 251056015.2, "flottant2024": 196958755.79999998, "rnpg24": 36838500.0, "rnpg25": 66300000.0, "ca24": 1243449540.0, "ca25": 0.0, "div25": 110.0, "dy24": 0.0556792873051225, "dy25": 0.061247216035634745, "poids_masi": 0.0009599700080166853, "poids24": 0.0009498258266875371, "poids": 0.0009599700080166854, "pe24_calc": 17.82}, {"isin": "MA0000012114", "name": "AFRIC INDUSTRIES", "ticker": "AFRIC INDUSTRIES", "secteur": "Bâtiment et matériaux", "cours": 336.0, "cours_prec": 303.5, "nb_titres": 291500.0, "capi": 97944000.0, "flottant": 48972000.0, "flottant2024": 44235125.0, "rnpg24": 9916766.71, "rnpg25": 7530000.0, "ca24": 43110076.58, "ca25": 43952000.0, "div25": 20.0, "dy24": 0.06547619047619048, "dy25": 0.05952380952380952, "poids_masi": 0.00018725562578192755, "poids24": 0.00021332214453271615, "poids": 0.00018725562578192757, "pe24_calc": 8.92}, {"isin": "MA0000012247", "name": "COSUMAR", "ticker": "COSUMAR", "secteur": "Agroalimentaire", "cours": 193.0, "cours_prec": 195.8, "nb_titres": 94487143.0, "capi": 18236018599.0, "flottant": 5470805579.7, "flottant2024": 7400233039.76, "rnpg24": 850200000.0, "rnpg25": 704000000.0, "ca24": 10238600000.0, "ca25": 10487000000.0, "div25": 10.0, "dy24": 0.05181347150259067, "dy25": 0.05181347150259067, "poids_masi": 0.020918874507024104, "poids24": 0.03568733177725764, "poids": 0.020918874507024104, "pe24_calc": 21.76}, {"isin": "MA0000012031", "name": "LESIEUR", "ticker": "LESIEUR", "secteur": "Agroalimentaire", "cours": 415.0, "cours_prec": 280.0, "nb_titres": 27631510.0, "capi": 11467076650.0, "flottant": 2866769162.5, "flottant2024": 1934205700.0, "rnpg24": 24000000.0, "rnpg25": 8000000.0, "ca24": 5455000000.0, "ca25": 5378000000.0, "div25": 0.0, "dy24": 0.007228915662650603, "dy25": 0.0, "poids_masi": 0.010961746579602014, "poids24": 0.009327630653047852, "poids": 0.010961746579602015, "pe24_calc": 322.37}, {"isin": "MA0000012395", "name": "MUTANDIS", "ticker": "MUTANDIS", "secteur": "Agroalimentaire", "cours": 229.6, "cours_prec": 298.0, "nb_titres": 9246737.0, "capi": 2123050815.2, "flottant": 1698440652.16, "flottant2024": 2204422100.8, "rnpg24": 159408000.0, "rnpg25": 126160000.0, "ca24": 2116550000.0, "ca25": 2021823000.0, "div25": 10.5, "dy24": 0.04573170731707317, "dy25": 0.04573170731707317, "poids_masi": 0.006494375708030833, "poids24": 0.010630738581567734, "poids": 0.006494375708030834, "pe24_calc": 17.29}, {"isin": "MA0000012023", "name": "UNIMER", "ticker": "UNIMER", "secteur": "Agroalimentaire", "cours": 160.0, "cours_prec": 174.9, "nb_titres": 11413880.0, "capi": 1826220800.0, "flottant": 365244160.0, "flottant2024": 399257522.40000004, "rnpg24": -28000000.0, "rnpg25": 11000000.0, "ca24": 1259642000.0, "ca25": 1085000000.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.0013965944569140421, "poids24": 0.00192540364470965, "poids": 0.0013965944569140423, "pe24_calc": null}, {"isin": "MA0000011421", "name": "DARI", "ticker": "DARI", "secteur": "Agroalimentaire", "cours": 4280.0, "cours_prec": 3478.0, "nb_titres": 298375.0, "capi": 1277045000.0, "flottant": 383113500.0, "flottant2024": 311324474.99999994, "rnpg24": 43660239.0, "rnpg25": 52395028.0, "ca24": 858916922.0, "ca25": 818399882.0, "div25": 140.0, "dy24": 0.03271028037383177, "dy25": 0.03271028037383177, "poids_masi": 0.0014649219592421077, "poids24": 0.001501349993981524, "poids": 0.001464921959242108, "pe24_calc": 23.77}, {"isin": "MA0000011868", "name": "CARTIER SAADA", "ticker": "CARTIER SAADA", "secteur": "Agroalimentaire", "cours": 30.0, "cours_prec": 32.42, "nb_titres": 5265000.0, "capi": 157950000.0, "flottant": 39487500.0, "flottant2024": 25603695.000000004, "rnpg24": 5736516.56, "rnpg25": 0.0, "ca24": 296694031.26, "ca25": 0.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.00015098947404769796, "poids24": 0.00012347280866419123, "poids": 0.00015098947404769796, "pe24_calc": 29.76}, {"isin": "MA0000012312", "name": "MARSA", "ticker": "MARSA", "secteur": "Services de transport", "cours": 770.0, "cours_prec": 502.3, "nb_titres": 73395600.0, "capi": 56514612000.0, "flottant": 19780114200.0, "flottant2024": 12903313458.0, "rnpg24": 1266979000.0, "rnpg25": 1589000000.0, "ca24": 5008150000.0, "ca25": 5785000000.0, "div25": 11.0, "dy24": 0.012337662337662338, "dy25": 0.014285714285714285, "poids_masi": 0.0756337838470757, "poids24": 0.062225719910103505, "poids": 0.07563378384707571, "pe24_calc": 29.1}, {"isin": "MA0000012205", "name": "TAQA", "ticker": "TAQA", "secteur": "Electricité", "cours": 1770.0, "cours_prec": 1460.0, "nb_titres": 23588542.0, "capi": 41751719340.0, "flottant": 6262757901.0, "flottant2024": 5165890698.0, "rnpg24": 1052824000.0, "rnpg25": 981000000.0, "ca24": 10878079000.0, "ca25": 10638000000.0, "div25": 38.0, "dy24": 0.020903954802259886, "dy25": 0.021468926553672316, "poids_masi": 0.023947085066414808, "poids24": 0.024912304014490065, "poids": 0.02394708506641481, "pe24_calc": 32.71}, {"isin": "MA0000012262", "name": "TOTAL", "ticker": "TOTAL", "secteur": "Pétrole et Gaz", "cours": 1496.0, "cours_prec": 1576.0, "nb_titres": 8960000.0, "capi": 13404160000.0, "flottant": 2010624000.0, "flottant2024": 2118143999.9999998, "rnpg24": 934195000.0, "rnpg25": 851000000.0, "ca24": 16751842000.0, "ca25": 15126000000.0, "div25": 113.0, "dy24": 0.07553475935828877, "dy25": 0.07553475935828877, "poids_masi": 0.0076880800321032896, "poids24": 0.01021466584550412, "poids": 0.00768808003210329, "pe24_calc": 15.12}, {"isin": "MA0000010951", "name": "AFRIQUIA GAZ", "ticker": "AFRIQUIA GAZ", "secteur": "Pétrole et Gaz", "cours": 3700.0, "cours_prec": 3850.0, "nb_titres": 3437500.0, "capi": 12718750000.0, "flottant": 3815625000.0, "flottant2024": 3970312500.0, "rnpg24": 747392000.0, "rnpg25": 750500000.0, "ca24": 8989425000.0, "ca25": 8989425000.0, "div25": 175.0, "dy24": 0.0472972972972973, "dy25": 0.0472972972972973, "poids_masi": 0.014589913565387717, "poids24": 0.019146675339225323, "poids": 0.014589913565387719, "pe24_calc": 17.71}, {"isin": "MA0000011801", "name": "LABEL VIE", "ticker": "LABEL VIE", "secteur": "Distribution", "cours": 3949.0, "cours_prec": 4300.0, "nb_titres": 2893957.0, "capi": 11428236193.0, "flottant": 5142706286.849999, "flottant2024": 5599806795.0, "rnpg24": 541699404.32, "rnpg25": 578790600.36, "ca24": 18534397910.76, "ca25": 18534397910.0, "div25": 120.0, "dy24": 0.027999493542669028, "dy25": 0.030387439858191947, "poids_masi": 0.019664311932466504, "poids24": 0.027004847267375776, "poids": 0.019664311932466507, "pe24_calc": 22.97}, {"isin": "MA0000010969", "name": "AUTO HALL", "ticker": "AUTO HALL", "secteur": "Distribution", "cours": 79.5, "cours_prec": 67.65, "nb_titres": 50294528.0, "capi": 3998414976.0, "flottant": 799682995.2, "flottant2024": 680484963.84, "rnpg24": 17092037.28, "rnpg25": 100000000.0, "ca24": 5022141140.61, "ca25": 5911000000.0, "div25": 2.0, "dy24": 0.025157232704402517, "dy25": 0.025157232704402517, "poids_masi": 0.0030577705565086617, "poids24": 0.003281611882155111, "poids": 0.0030577705565086617, "pe24_calc": 199.06}, {"isin": "MA0000011009", "name": "AUTO NEJMA", "ticker": "AUTO NEJMA", "secteur": "Distribution", "cours": 4585.0, "cours_prec": 2068.0, "nb_titres": 1023264.0, "capi": 4691665440.0, "flottant": 234583272.0, "flottant2024": 105805497.60000001, "rnpg24": 205383000.0, "rnpg25": 324182000.0, "ca24": 2902480000.0, "ca25": 4210641000.0, "div25": 176.0, "dy24": 0.026172300981461286, "dy25": 0.038386041439476555, "poids_masi": 0.000896982712495551, "poids24": 0.0005102428364649846, "poids": 0.0008969827124955511, "pe24_calc": 10.3}, {"isin": "MA0000011843", "name": "STOKVIS", "ticker": "STOKVIS", "secteur": "Distribution", "cours": 69.0, "cours_prec": 15.0, "nb_titres": 17695150.0, "capi": 1220965350.0, "flottant": 183144802.5, "flottant2024": 39814087.5, "rnpg24": 21000000.0, "rnpg25": 26400000.0, "ca24": 334396000.0, "ca25": 219400000.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.0007002959773104024, "poids24": 0.00019200186566926638, "poids": 0.0007002959773104025, "pe24_calc": 12.64}, {"isin": "MA0000011942", "name": "ENNAKL", "ticker": "ENNAKL", "secteur": "Distribution", "cours": 49.0, "cours_prec": 32.7, "nb_titres": 30000000.0, "capi": 735000000.0, "flottant": 110250000.0, "flottant2024": 98100000.00000001, "rnpg24": 154227079.93, "rnpg25": 190257980.0, "ca24": 1898014910.0, "ca25": 1961980790.0, "div25": 3.19, "dy24": 0.04857142857142857, "dy25": 0.06510204081632653, "poids_masi": 0.0004215660528967065, "poids24": 0.0004730833783935155, "poids": 0.00042156605289670656, "pe24_calc": 6.36}, {"isin": "MA0000011587", "name": "FENIE BROSSETTE", "ticker": "FENIE BROSSETTE", "secteur": "Distribution", "cours": 290.0, "cours_prec": 114.75, "nb_titres": 1438984.0, "capi": 417305360.0, "flottant": 146056876.0, "flottant2024": 57793194.89999999, "rnpg24": 16603000.0, "rnpg25": 14900000.0, "ca24": 698170000.0, "ca25": 757000000.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.0005584818205328227, "poids24": 0.00027870540154380105, "poids": 0.0005584818205328228, "pe24_calc": 9.95}, {"isin": "MA0000011595", "name": "SRM", "ticker": "SRM", "secteur": "Distribution", "cours": 510.0, "cours_prec": 625.0, "nb_titres": 320000.0, "capi": 163200000.0, "flottant": 32640000.0, "flottant2024": 40000000.0, "rnpg24": 1921739.67, "rnpg25": 12066216.48, "ca24": 356466189.99, "ca25": 393652383.84, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.0001248064940276508, "poids24": 0.00019289842136330904, "poids": 0.0001248064940276508, "pe24_calc": 104.07}, {"isin": "MA0000010928", "name": "WAA", "ticker": "WAA", "secteur": "Assurances", "cours": 4900.0, "cours_prec": 4450.0, "nb_titres": 3500000.0, "capi": 17150000000.0, "flottant": 4287500000.0, "flottant2024": 3893750000.0, "rnpg24": 853761000.0, "rnpg25": 1026000000.0, "ca24": 13726000000.0, "ca25": 15226000000.0, "div25": 150.0, "dy24": 0.02857142857142857, "dy25": 0.030612244897959183, "poids_masi": 0.016394235390427475, "poids24": 0.018777455704584615, "poids": 0.01639423539042748, "pe24_calc": 18.24}, {"isin": "MA0000011710", "name": "ATLANTASANAD", "ticker": "ATLANTASANAD", "secteur": "Assurances", "cours": 138.0, "cours_prec": 130.0, "nb_titres": 60283595.0, "capi": 8319136110.0, "flottant": 1663827222.0, "flottant2024": 1175530102.5, "rnpg24": 453361000.0, "rnpg25": 467641000.0, "ca24": 5260000000.0, "ca25": 6050000000.0, "div25": 5.8, "dy24": 0.042028985507246375, "dy25": 0.042028985507246375, "poids_masi": 0.006362023353112311, "poids24": 0.005668947525932472, "poids": 0.006362023353112312, "pe24_calc": 17.29}, {"isin": "MA0000012007", "name": "SANLAM", "ticker": "SANLAM", "secteur": "Assurances", "cours": 2698.0, "cours_prec": 1899.0, "nb_titres": 4116874.0, "capi": 11107326052.0, "flottant": 1110732605.2, "flottant2024": 781794372.6, "rnpg24": 690920000.0, "rnpg25": 676523000.0, "ca24": 6186016000.0, "ca25": 0, "div25": 98.0, "dy24": 0.030022238695329873, "dy25": 0.0363232023721275, "poids_masi": 0.004247139775037097, "poids24": 0.0037701725076314655, "poids": 0.004247139775037097, "pe24_calc": 11.32}, {"isin": "MA0000010944", "name": "AGMA", "ticker": "AGMA", "secteur": "Assurances", "cours": 7020.0, "cours_prec": 6900.0, "nb_titres": 200000.0, "capi": 1404000000.0, "flottant": 491400000.0, "flottant2024": 483000000.0, "rnpg24": 66626000.0, "rnpg25": 73800000.0, "ca24": 172249000.0, "ca25": 37400000.0, "div25": 310.0, "dy24": 0.042735042735042736, "dy25": 0.04415954415954416, "poids_masi": 0.0018789801214824633, "poids24": 0.0023292484379619565, "poids": 0.0018789801214824636, "pe24_calc": 20.71}, {"isin": "MA0000012296", "name": "AFMA", "ticker": "AFMA", "secteur": "Assurances", "cours": 1246.0, "cours_prec": 1167.0, "nb_titres": 1000000.0, "capi": 1246000000.0, "flottant": 498400000.00000006, "flottant2024": 466800000.0, "rnpg24": 74000000.0, "rnpg25": 82000000.0, "ca24": 286224142.0, "ca25": 0, "div25": 62.0, "dy24": 0.0, "dy25": 0.04975922953451043, "poids_masi": 0.0019057462200790798, "poids24": 0.0022511245773098165, "poids": 0.00190574622007908, "pe24_calc": 15.77}, {"isin": "MA0000010365", "name": "SBM", "ticker": "SBM", "secteur": "Boissons", "cours": 2250.0, "cours_prec": 2405.0, "nb_titres": 2829653.0, "capi": 6366719250.0, "flottant": 1273343850.0, "flottant2024": 1361063093.0, "rnpg24": 215357000.0, "rnpg25": 343000000.0, "ca24": 2862632000.0, "ca25": 1630269750.0, "div25": 127.0, "dy24": 0.044444444444444446, "dy25": 0.05644444444444444, "poids_masi": 0.004868921005213568, "poids24": 0.006563673050389067, "poids": 0.004868921005213569, "pe24_calc": 31.6}, {"isin": "MA0000010415", "name": "OULMES", "ticker": "OULMES", "secteur": "Boissons", "cours": 1257.0, "cours_prec": 1315.0, "nb_titres": 1980000.0, "capi": 2488860000.0, "flottant": 373328999.99999994, "flottant2024": 390555000.0, "rnpg24": 57886000.0, "rnpg25": 112300000.0, "ca24": 2940457000.0, "ca25": 13694000000.0, "div25": 40.15, "dy24": 0.018297533810660304, "dy25": 0.03194112967382657, "poids_masi": 0.0014275086889965942, "poids24": 0.001883436073888679, "poids": 0.0014275086889965944, "pe24_calc": 44.98}, {"isin": "MA0000011058", "name": "MANAGEM", "ticker": "MANAGEM", "secteur": "Mines", "cours": 10745.0, "cours_prec": 2900.0, "nb_titres": 11864676.0, "capi": 127485943620.0, "flottant": 19122891543.0, "flottant2024": 5161134060.0, "rnpg24": 619900000.0, "rnpg25": 3002000000.0, "ca24": 8859400000.0, "ca25": 1551000000.0, "div25": 55.0, "dy24": 0.0037226617031177293, "dy25": 0.005118659841786877, "poids_masi": 0.07312074292747682, "poids24": 0.024889365315460148, "poids": 0.07312074292747683, "pe24_calc": 55.51}, {"isin": "MA0000011793", "name": "CMT", "ticker": "CMT", "secteur": "Mines", "cours": 4289.0, "cours_prec": 1592.0, "nb_titres": 1681233.0, "capi": 7210808337.0, "flottant": 3605404168.5, "flottant2024": 1338261468.0, "rnpg24": -12125978.0, "rnpg25": 196000000.0, "ca24": 586364041.0, "ca25": 15126000000.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.01378608620781748, "poids24": 0.006453713113713613, "poids": 0.013786086207817481, "pe24_calc": null}, {"isin": "MA0000010068", "name": "SMI", "ticker": "SMI", "secteur": "Mines", "cours": 7700.0, "cours_prec": 2190.0, "nb_titres": 1645090.0, "capi": 12667193000.0, "flottant": 1900078950.0, "flottant2024": 540412065.0, "rnpg24": 186719660.9, "rnpg25": 397000000.0, "ca24": 1052712641.87, "ca25": 5378000000.0, "div25": 150.0, "dy24": 0.01038961038961039, "dy25": 0.01948051948051948, "poids_masi": 0.007265385788150736, "poids24": 0.0026061158556046488, "poids": 0.007265385788150737, "pe24_calc": 19.29}, {"isin": "MA0000010993", "name": "REBAB COMPANY", "ticker": "REBAB COMPANY", "secteur": "Mines", "cours": 104.0, "cours_prec": 104.45, "nb_titres": 176456.0, "capi": 18351424.0, "flottant": 3670284.8000000003, "flottant2024": 3686165.8400000003, "rnpg24": 591972.65, "rnpg25": 1054000.0, "ca24": 0.0, "ca25": 10638000000.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 1.4034172119208871e-05, "poids24": 1.77763892854839e-05, "poids": 1.4034172119208873e-05, "pe24_calc": 31.13}, {"isin": "MA0000011512", "name": "ADDOHA", "ticker": "ADDOHA", "secteur": "Immobilier", "cours": 31.5, "cours_prec": 36.75, "nb_titres": 402551254.0, "capi": 12680364501.0, "flottant": 4438127575.349999, "flottant2024": 5177815504.575, "rnpg24": 304000000.0, "rnpg25": 516000000.0, "ca24": 2594688796.0, "ca25": 3508000000.0, "div25": 0.5, "dy24": 0.015873015873015872, "dy25": 0.015873015873015872, "poids_masi": 0.016970194323739952, "poids24": 0.024969810923574573, "poids": 0.016970194323739952, "pe24_calc": 48.66}, {"isin": "MA0000011819", "name": "ALLIANCES", "ticker": "ALLIANCES", "secteur": "Immobilier", "cours": 425.0, "cours_prec": 350.0, "nb_titres": 22078588.0, "capi": 9383399900.0, "flottant": 3753359960.0, "flottant2024": 3091002320.0, "rnpg24": 305000000.0, "rnpg25": 402000000.0, "ca24": 2363364000.0, "ca25": 3508000001.0, "div25": 4.0, "dy24": 0.008470588235294119, "dy25": 0.009411764705882352, "poids_masi": 0.01435182896542168, "poids24": 0.014906236698958145, "poids": 0.014351828965421682, "pe24_calc": 25.34}, {"isin": "MA0000012239", "name": "RDS", "ticker": "RDS", "secteur": "Immobilier", "cours": 140.2, "cours_prec": 75.02, "nb_titres": 26208850.0, "capi": 3674480769.9999995, "flottant": 1653516346.5, "flottant2024": 884784567.15, "rnpg24": -80000000.0, "rnpg25": 4000000.0, "ca24": 234000000.0, "ca25": 3508000002.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.006322597365933678, "poids24": 0.004266838656246342, "poids": 0.006322597365933678, "pe24_calc": null}, {"isin": "MA0000011611", "name": "HPS", "ticker": "HPS", "secteur": "Services informatiques", "cours": 525.0, "cours_prec": 575.0, "nb_titres": 7406190.0, "capi": 3888249750.0, "flottant": 2527362337.5, "flottant2024": 2768063512.5, "rnpg24": 62000000.0, "rnpg25": 105777740.0, "ca24": 1455000000.0, "ca25": 3508000003.0, "div25": 8.0, "dy24": 0.013343340838962556, "dy25": 0.015238095238095238, "poids_masi": 0.009663947073557087, "poids24": 0.013348877044865657, "poids": 0.009663947073557088, "pe24_calc": 68.69}, {"isin": "MA0000011637", "name": "DISWAY", "ticker": "DISWAY", "secteur": "Services informatiques", "cours": 754.7, "cours_prec": 662.0, "nb_titres": 1885762.0, "capi": 1423184581.4, "flottant": 498114603.48999995, "flottant2024": 436931055.4, "rnpg24": 78847540.18, "rnpg25": 85457931.0, "ca24": 1904636547.34, "ca25": 3508000004.0, "div25": 44.0, "dy24": 0.05300119252683185, "dy25": 0.05830131177951504, "poids_masi": 0.0019046549413468236, "poids24": 0.002107082770781613, "poids": 0.001904654941346824, "pe24_calc": 15.83}, {"isin": "MA0000012163", "name": "MICRODATA", "ticker": "MICRODATA", "secteur": "Services informatiques", "cours": 790.0, "cours_prec": 625.0, "nb_titres": 1680000.0, "capi": 1327200000.0, "flottant": 597240000.0, "flottant2024": 472500000.0, "rnpg24": 67814205.42, "rnpg25": 69500000.0, "ca24": 900445777.78, "ca25": 3508000005.0, "div25": 40.0, "dy24": 0.05063291139240506, "dy25": 0.05063291139240506, "poids_masi": 0.0022836835322633015, "poids24": 0.002278612602354088, "poids": 0.002283683532263302, "pe24_calc": 15.48}, {"isin": "MA0000012106", "name": "S2M", "ticker": "S2M", "secteur": "Services informatiques", "cours": 549.0, "cours_prec": 230.9, "nb_titres": 812070.0, "capi": 445826430.0, "flottant": 133747928.99999999, "flottant2024": 56252088.9, "rnpg24": 29413481.0, "rnpg25": 32600000.0, "ca24": 312710114.0, "ca25": 3508000006.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.0005114157506724621, "poids24": 0.00027127347867996295, "poids": 0.0005114157506724621, "pe24_calc": 6.37}, {"isin": "MA0000012536", "name": "DISTY", "ticker": "DISTY", "secteur": "Services informatiques", "cours": 338.0, "cours_prec": 225.5, "nb_titres": 998110.0, "capi": 337361180.0, "flottant": 236152826.0, "flottant2024": 147648416.07999998, "rnpg24": 19364056.78, "rnpg25": 25800000.0, "ca24": 547834555.13, "ca25": 3508000007.0, "div25": 19.5, "dy24": 0.04881656804733728, "dy25": 0.057692307692307696, "poids_masi": 0.0009029842606550815, "poids24": 0.0007120286594656253, "poids": 0.0009029842606550815, "pe24_calc": 11.62}, {"isin": "MA0000011678", "name": "M2M Group", "ticker": "M2M Group", "secteur": "Services informatiques", "cours": 421.0, "cours_prec": 550.0, "nb_titres": 647777.0, "capi": 272714117.0, "flottant": 95449940.95, "flottant2024": 124697072.5, "rnpg24": 20329810.0, "rnpg25": 6545127.0, "ca24": 102625950.86, "ca25": 3508000008.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.0003649746472155575, "poids24": 0.0006013467108469024, "poids": 0.0003649746472155576, "pe24_calc": 17.52}, {"isin": "MA0000011579", "name": "INVOLYS", "ticker": "INVOLYS", "secteur": "Services informatiques", "cours": 134.0, "cours_prec": 95.11, "nb_titres": 382716.0, "capi": 51283944.0, "flottant": 17949380.4, "flottant2024": 12740041.566, "rnpg24": -123469.25, "rnpg25": 100000.0, "ca24": 37516821.87, "ca25": 3508000009.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 6.86335550763674e-05, "poids24": 6.143834765460849e-05, "poids": 6.863355507636742e-05, "pe24_calc": null}, {"isin": "MA0000011132", "name": "IB MAROC", "ticker": "IB MAROC", "secteur": "Services informatiques", "cours": 61.9, "cours_prec": 35.98, "nb_titres": 417486.0, "capi": 25842383.4, "flottant": 11629072.53, "flottant2024": 6759515.825999999, "rnpg24": -11964719.93, "rnpg25": 0.0, "ca24": 480000.0, "ca25": 3508000010.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 4.446641456074029e-05, "poids24": 3.259749830039259e-05, "poids": 4.4466414560740294e-05, "pe24_calc": null}, {"isin": "MA0000012585", "name": "AKDITAL", "ticker": "AKDITAL", "secteur": "Santé", "cours": 1118.0, "cours_prec": 1085.0, "nb_titres": 14159207.0, "capi": 15829993426.0, "flottant": 7914996713.0, "flottant2024": 7681369797.5, "rnpg24": 314609432.0, "rnpg25": 494000000.0, "ca24": 2954038793.0, "ca25": 3508000011.0, "div25": 10.0, "dy24": 0.008944543828264758, "dy25": 0.008944543828264758, "poids_masi": 0.030264797487435977, "poids24": 0.03704310269613877, "poids": 0.03026479748743598, "pe24_calc": 48.83}, {"isin": "MA0000012759", "name": "VICENNE", "ticker": "VICENNE", "secteur": "Santé", "cours": 399.0, "cours_prec": null, "nb_titres": 10258850.0, "capi": 4093281150.0, "flottant": 1637312460.0000002, "flottant2024": 0, "rnpg24": 91217000.0, "rnpg25": 144000000.0, "ca24": 836623000.0, "ca25": 3508000012.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.0062606381054040525, "poids24": NaN, "poids": 0.006260638105404053, "pe24_calc": null}, {"isin": "MA0000010357", "name": "EQDOM", "ticker": "EQDOM", "secteur": "Societé de financement", "cours": 1396.0, "cours_prec": 1100.0, "nb_titres": 1670250.0, "capi": 2331669000.0, "flottant": 466333800.0, "flottant2024": 367455000.0, "rnpg24": -6963000.0, "rnpg25": 95498000.0, "ca24": 539602000.0, "ca25": 3508000013.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.001783133781390677, "poids24": 0.001772037235551368, "poids": 0.0017831337813906773, "pe24_calc": null}, {"isin": "MA0000012767", "name": "CASH PLUS", "ticker": "CASH PLUS", "secteur": "Societé de financement", "cours": 279.85, "cours_prec": null, "nb_titres": 24553090.0, "capi": 6871182236.500001, "flottant": 1065033246.6575, "flottant2024": 0, "rnpg24": 196468000.0, "rnpg25": 242000000.0, "ca24": 760000000.0, "ca25": 3508000014.0, "div25": 9.73, "dy24": 0.0, "dy25": 0.03476862604966947, "poids_masi": 0.004072397841244143, "poids24": NaN, "poids": 0.004072397841244143, "pe24_calc": null}, {"isin": "MA0000011744", "name": "SALAFIN", "ticker": "SALAFIN", "secteur": "Societé de financement", "cours": 501.2, "cours_prec": 569.0, "nb_titres": 3124119.0, "capi": 1565808442.8, "flottant": 469742532.84, "flottant2024": 355524742.20000005, "rnpg24": 93146000.0, "rnpg25": 96000000.0, "ca24": 378646000.0, "ca25": 3508000015.0, "div25": 29.5, "dy24": 0.058858739026336794, "dy25": 0.058858739026336794, "poids_masi": 0.0017961678498599576, "poids24": 0.0017145040381494356, "poids": 0.0017961678498599578, "pe24_calc": 19.08}, {"isin": "MA0000011215", "name": "MAGHREBAIL", "ticker": "MAGHREBAIL", "secteur": "Societé de financement", "cours": 890.0, "cours_prec": 905.0, "nb_titres": 1384182.0, "capi": 1231921980.0, "flottant": 184788297.0, "flottant2024": 187902706.5, "rnpg24": 135634000.0, "rnpg25": 148199000.0, "ca24": 377618000.0, "ca25": 3508000016.0, "div25": 53.0, "dy24": 0.05955056179775281, "dy25": 0.05955056179775281, "poids_masi": 0.0007065802538575448, "poids24": 0.0009061533863435797, "poids": 0.0007065802538575448, "pe24_calc": 9.24}, {"isin": "MA0000010035", "name": "MAROC LEASING", "ticker": "MAROC LEASING", "secteur": "Societé de financement", "cours": 348.1, "cours_prec": 399.0, "nb_titres": 2776768.0, "capi": 966592940.8000001, "flottant": 96659294.08000001, "flottant2024": 110793043.20000002, "rnpg24": 105304000.0, "rnpg25": 107295000.0, "ca24": 379187000.0, "ca25": 3508000017.0, "div25": 14.0, "dy24": 0.04021832806664751, "dy25": 0.04021832806664751, "poids_masi": 0.0003695988850892299, "poids24": 0.0005342950782829226, "poids": 0.00036959888508922994, "pe24_calc": 10.52}, {"isin": "MA0000012502", "name": "SOTHEMA", "ticker": "SOTHEMA", "secteur": "indus Pharmaceutique", "cours": 1611.0, "cours_prec": 949.0, "nb_titres": 7606728.0, "capi": 12254438808.0, "flottant": 1838165821.1999998, "flottant2024": 721878487.2, "rnpg24": 345000000.0, "rnpg25": 418000000.0, "ca24": 3082000000.0, "ca25": 3508000018.0, "div25": 33.0, "dy24": 0.01738050900062073, "dy25": 0.020484171322160148, "poids_masi": 0.007028646801024192, "poids24": 0.0034812305149253425, "poids": 0.007028646801024193, "pe24_calc": 20.92}, {"isin": "MA0000011660", "name": "PROMOPHARM", "ticker": "PROMOPHARM", "secteur": "indus Pharmaceutique", "cours": 1410.0, "cours_prec": 920.0, "nb_titres": 1000000.0, "capi": 1410000000.0, "flottant": 141000000.0, "flottant2024": 92000000.0, "rnpg24": 55159969.69, "rnpg25": 59915000.0, "ca24": 898713862.91, "ca25": 3508000019.0, "div25": 30.0, "dy24": 0.0, "dy25": 0.02127659574468085, "poids_masi": 0.0005391457003032709, "poids24": 0.0004436663691356108, "poids": 0.000539145700303271, "pe24_calc": 16.68}, {"isin": "MA0000011850", "name": "DHO", "ticker": "DHO", "secteur": "Holding", "cours": 53.5, "cours_prec": 53.0, "nb_titres": 87600000.0, "capi": 4686600000.0, "flottant": 1405980000.0, "flottant2024": 1392839999.9999998, "rnpg24": 295382791.69, "rnpg25": 307000000.0, "ca24": 3137670704.52, "ca25": 3508000020.0, "div25": 2.0, "dy24": 0.04205607476635514, "dy25": 0.037383177570093455, "poids_masi": 0.005376085614981509, "poids24": 0.006716915930291782, "poids": 0.00537608561498151, "pe24_calc": 15.72}, {"isin": "MA0000010571", "name": "ZELLIDJA", "ticker": "ZELLIDJA", "secteur": "Holding", "cours": 226.4, "cours_prec": 104.0, "nb_titres": 572849.0, "capi": 129693013.60000001, "flottant": 12969301.36, "flottant2024": 5957629.600000001, "rnpg24": 6315000.0, "rnpg25": 21588000.0, "ca24": 698178000.0, "ca25": 3508000021.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 4.9591085561569955e-05, "poids24": 2.873043362268306e-05, "poids": 4.959108556156996e-05, "pe24_calc": 9.43}, {"isin": "MA0000011728", "name": "SNEP", "ticker": "SNEP", "secteur": "Chimie", "cours": 383.1, "cours_prec": 522.1, "nb_titres": 2400000.0, "capi": 919440000.0, "flottant": 367776000.0, "flottant2024": 501216000.00000006, "rnpg24": -74600000.0, "rnpg25": -192500000.0, "ca24": 633333000.0, "ca25": 3508000022.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.001406275525352736, "poids24": 0.002417094379050808, "poids": 0.0014062755253527362, "pe24_calc": null}, {"isin": "MA0000010985", "name": "MAGHREB OXYGENE", "ticker": "MAGHREB OXYGENE", "secteur": "Chimie", "cours": 386.0, "cours_prec": 225.0, "nb_titres": 812500.0, "capi": 313625000.0, "flottant": 47043750.0, "flottant2024": 36562500.0, "rnpg24": 12428000.0, "rnpg25": 15450000.0, "ca24": 330365000.0, "ca25": 3508000023.0, "div25": 4.0, "dy24": 0.010362694300518135, "dy25": 0.010362694300518135, "poids_masi": 0.0001798825215506525, "poids24": 0.00017632121327739966, "poids": 0.00017988252155065252, "pe24_calc": 14.71}, {"isin": "MA0000011462", "name": "RISMA", "ticker": "RISMA", "secteur": "Loisirs et Hôtels", "cours": 316.0, "cours_prec": 212.05, "nb_titres": 14326947.0, "capi": 4527315252.0, "flottant": 679097287.8, "flottant2024": 455704366.7025, "rnpg24": 183024000.0, "rnpg25": 270000000.0, "ca24": 1263775000.0, "ca25": 3508000024.0, "div25": 9.0, "dy24": 0.022151898734177215, "dy25": 0.028481012658227847, "poids_masi": 0.0025966835659927863, "poids24": 0.0021976163236319683, "poids": 0.0025966835659927867, "pe24_calc": 16.6}, {"isin": "MA0000012460", "name": "ARADEI", "ticker": "ARADEI", "secteur": "Placement immobilier", "cours": 418.0, "cours_prec": 493.5, "nb_titres": 12568130.0, "capi": 5253478340.0, "flottant": 3152087004.0, "flottant2024": 3721423292.9999995, "rnpg24": 297453000.0, "rnpg25": 321673000.0, "ca24": 605747000.0, "ca25": 3508000025.0, "div25": 23.0, "dy24": 0.05263157894736842, "dy25": 0.05502392344497608, "poids_masi": 0.012052724504882406, "poids24": 0.017946416961108675, "poids": 0.012052724504882407, "pe24_calc": 20.85}, {"isin": "MA0000012387", "name": "IMMORENTE", "ticker": "IMMORENTE", "secteur": "Placement immobilier", "cours": 91.3, "cours_prec": 90.5, "nb_titres": 9007000.0, "capi": 822339100.0, "flottant": 575637370.0, "flottant2024": 570593450.0, "rnpg24": 47112000.0, "rnpg25": 41486000.0, "ca24": 78675000.0, "ca25": 3508000026.0, "div25": 2.2, "dy24": 0.024096385542168676, "dy25": 0.024096385542168676, "poids_masi": 0.00220108094304527, "poids24": 0.002751664393631105, "poids": 0.00220108094304527, "pe24_calc": 17.3}, {"isin": "MA0000011991", "name": "BALIMA", "ticker": "BALIMA", "secteur": "Placement immobilier", "cours": 216.55, "cours_prec": 205.0, "nb_titres": 1744000.0, "capi": 377663200.0, "flottant": 75532640.0, "flottant2024": 71504000.0, "rnpg24": 14280669.0, "rnpg25": 13650000.0, "ca24": 63153000.0, "ca25": 3508000027.0, "div25": 5.5, "dy24": 0.02539829138767028, "dy25": 0.02539829138767028, "poids_masi": 0.000288816298500389, "poids24": 0.00034482521802905124, "poids": 0.0002888162985003891, "pe24_calc": 25.04}, {"isin": "MA0000010340", "name": "CTM", "ticker": "CTM", "secteur": "Transport", "cours": 839.0, "cours_prec": 640.0, "nb_titres": 1225978.0, "capi": 1028595542.0, "flottant": 205719108.4, "flottant2024": 196156480.0, "rnpg24": 46622000.0, "rnpg25": 56200000.0, "ca24": 1301509000.0, "ca25": 3508000028.0, "div25": 26.0, "dy24": 0.029797377830750895, "dy25": 0.03098927294398093, "poids_masi": 0.0007866139912346277, "poids24": 0.0009459568833045875, "poids": 0.0007866139912346278, "pe24_calc": 16.83}, {"isin": "MA0000011447", "name": "MED PAPER", "ticker": "MED PAPER", "secteur": "Sylviculture et Papier", "cours": 23.83, "cours_prec": 20.1, "nb_titres": 4714199.0, "capi": 112339362.16999999, "flottant": 28084840.542499997, "flottant2024": 23688849.975, "rnpg24": 7985231.64, "rnpg25": 6700000.0, "ca24": 101768000.0, "ca25": 3508000029.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.00010738880157582877, "poids24": 0.00011423854410224408, "poids": 0.00010738880157582878, "pe24_calc": 11.87}, {"isin": "MA0000012056", "name": "STROC", "ticker": "STROC", "secteur": "Biens d'équipement", "cours": 158.0, "cours_prec": 48.0, "nb_titres": 1248515.0, "capi": 197265370.0, "flottant": 59179611.0, "flottant2024": 16120825.680000002, "rnpg24": -12577347.63, "rnpg25": 500000.0, "ca24": 117669378.45, "ca25": 3508000030.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.00022628675756219968, "poids24": 7.774204561862733e-05, "poids": 0.0002262867575621997, "pe24_calc": null}, {"isin": "MA0000011777", "name": "DLM", "ticker": "DLM", "secteur": "Biens d'équipement", "cours": 40.0, "cours_prec": 40.0, "nb_titres": 1750000.0, "capi": 70000000.0, "flottant": 14000000.0, "flottant2024": 14000000.0, "rnpg24": -401713000.0, "rnpg25": 0.0, "ca24": 133071000.0, "ca25": 3508000031.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 5.3532197193232577e-05, "poids24": 6.751444747715816e-05, "poids": 5.353219719323258e-05, "pe24_calc": null}, {"isin": "MA0000012718", "name": "CMGP", "ticker": "CMGP", "secteur": "Industrie agricole", "cours": 367.9, "cours_prec": null, "nb_titres": 17000900.0, "capi": 6254631110.0, "flottant": 3127315555.0, "flottant2024": 0, "rnpg24": 182532410.0, "rnpg25": 244000000.0, "ca24": 2327559142.0, "ca25": 3508000032.0, "div25": 6.5, "dy24": 0.0171242185376461, "dy25": 0.0176678445229682, "poids_masi": 0.011958005212551684, "poids24": NaN, "poids": 0.011958005212551685, "pe24_calc": null}].map(d => ({
+  ...d,
+  pe24: d.pe24_calc,
+  pe25: d.rnpg25 ? parseFloat((d.capi / d.rnpg25).toFixed(2)) : null
+}));
+
+let filteredData = [...RAW_DATA];
+
+const SECTOR_COLORS = {
+  "Banque": "#0077ff",
+  "Télécommunication": "#00e5a0",
+  "Bâtiment et matériaux": "#ff6b35",
+  "Agroalimentaire": "#ffd32a",
+  "Services de transport": "#a855f7",
+  "Pétrole et Gaz": "#f97316",
+  "Distribution": "#06b6d4",
+  "Assurances": "#ec4899",
+  "Boissons": "#84cc16",
+  "Services informatiques": "#8b5cf6",
+  "Soc. de financement": "#14b8a6",
+  "Holding": "#64748b",
+  "Chimie": "#ef4444",
+  "Immobilier": "#d97706"
+};
+
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return (n / 1e6).toLocaleString('fr-FR', {minimumFractionDigits: 1, maximumFractionDigits: 1});
+}
+
+function fmtCours(n) {
+  if (!n) return '—';
+  return n.toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
+function varRNPG(d) {
+  if (!d.rnpg24 || !d.rnpg25) return null;
+  return ((d.rnpg25 - d.rnpg24) / Math.abs(d.rnpg24)) * 100;
+}
+
+function getPeClass(pe) {
+  if (pe <= 15) return 'pe-low';
+  if (pe <= 25) return 'pe-mid';
+  return 'pe-high';
+}
+
+// PE harmonique pondéré : 1 / SOMMEPROD(poids_flottant, 1/pe_titre)
+// poids = flottant_i / sum(flottant), pe_titre = capi_i / rnpg_i
+function calcPEHarmonique(data, rnpgField) {
+  // Exclure valeurs avec RNPG nul ou négatif
+  const valid = data.filter(d => d.flottant > 0 && d[rnpgField] > 0 && d.capi > 0);
+  const totalFlottant = valid.reduce((s, d) => s + d.flottant, 0);
+  if (!totalFlottant) return null;
+  const sommeprod = valid.reduce((s, d) => {
+    const poids = d.flottant / totalFlottant;
+    const pe_titre = d.capi / d[rnpgField];
+    return s + poids * (1 / pe_titre);
+  }, 0);
+  return sommeprod > 0 ? 1 / sommeprod : null;
+}
+function calcPE24Harmonique(data) {
+  // PE 2024 = 1 / SOMMEPROD(poids24, 1/pe24) — poids bruts, RNPG 2024 > 0 uniquement
+  const valid = data.filter(d => d.poids24 > 0 && d.rnpg24 > 0 && d.pe24 && d.pe24 > 0);
+  if (!valid.length) return null;
+  const sp = valid.reduce((s, d) => s + d.poids24 * (1 / d.pe24), 0);
+  return sp > 0 ? 1 / sp : null;
+}
+function calcPE25Harmonique(data) { return calcPEHarmonique(data, 'rnpg25'); }
+
+let excludedTickers = new Set();
+let excludedSectors = new Set();
+let currentExclTab = "valeurs";
+
+function toggleExclusion() {
+  const body = document.getElementById('exclusionBody');
+  const header = document.getElementById('exclusionHeader');
+  const toggle = document.getElementById('exclusionToggle');
+  body.classList.toggle('open');
+  header.classList.toggle('open');
+  toggle.classList.toggle('open');
+}
+
+function switchExclTab(tab) {
+  currentExclTab = tab;
+  document.getElementById('exclTabValeurs').classList.toggle('active', tab === 'valeurs');
+  document.getElementById('exclTabSecteurs').classList.toggle('active', tab === 'secteurs');
+  document.getElementById('exclusionList').style.display = tab === 'valeurs' ? 'flex' : 'none';
+  document.getElementById('exclusionListSecteurs').style.display = tab === 'secteurs' ? 'flex' : 'none';
+}
+
+function buildExclusionList() {
+  // Secteurs
+  const sectors = [...new Set(RAW_DATA.map(d => d.secteur))].sort();
+  const listSec = document.getElementById('exclusionListSecteurs') || document.getElementById('exclusionList');
+  if (!listSec) return;
+  listSec.innerHTML = sectors.map(s => `
+    <div class="excl-item ${excludedSectors.has(s) ? 'excluded' : ''}"
+         onclick="toggleExcludeSector('${s.replace(/'/g, "\'")}')">
+      ${s}
+    </div>`).join('');
+
+  updateExclusionCount();
+}
+
+function uncheckAllRows(masterChk) {
+  if (!masterChk.checked) {
+    // Décocher toutes les valeurs
+    excludedTickers.clear();
+    updateExclusionCount();
+    buildKPIs();
+    renderTable();
+  }
+}
+
+function toggleExcludeChk(ticker, chk) {
+  if (chk.checked) {
+    excludedTickers.add(ticker);
+  } else {
+    excludedTickers.delete(ticker);
+  }
+  // Mettre à jour la ligne visuellement sans re-render complet
+  const row = chk.closest('tr');
+  row.classList.toggle('excluded-row', chk.checked);
+  updateExclusionCount();
+  buildKPIs();
+}
+
+function toggleExclude(ticker) {
+  if (excludedTickers.has(ticker)) {
+    excludedTickers.delete(ticker);
+  } else {
+    excludedTickers.add(ticker);
+  }
+  buildExclusionList();
+  buildKPIs();
+}
+
+function toggleExcludeSector(sector) {
+  if (excludedSectors.has(sector)) {
+    excludedSectors.delete(sector);
+  } else {
+    excludedSectors.add(sector);
+  }
+  buildExclusionList();
+  buildKPIs();
+}
+
+function clearExclusions() {
+  excludedTickers.clear();
+  excludedSectors.clear();
+  buildExclusionList();
+  buildKPIs();
+  renderTable(); // Remet à jour les checkboxes
+}
+
+function updateExclusionCount() {
+  const badge = document.getElementById('exclusionCount');
+  const n = excludedTickers.size + excludedSectors.size;
+  badge.textContent = n + ' exclu(s)';
+  badge.classList.toggle('visible', n > 0);
+}
+
+const PART_MASI = 1.0;
+
+// Build KPIs
+function buildKPIs() {
+  const activeData = RAW_DATA.filter(d => !excludedTickers.has(d.ticker) && !excludedSectors.has(d.secteur));
+  const isFiltered = excludedTickers.size > 0 || excludedSectors.size > 0;
+
+  const totalCapi = activeData.reduce((s,d) => s + d.capi, 0);
+  const totalRNPG25 = activeData.reduce((s,d) => s + (d.rnpg25||0), 0);
+  const totalRNPG24 = activeData.reduce((s,d) => s + (d.rnpg24||0), 0);
+  const pe25Global = calcPE25Harmonique(activeData);
+  const varRNPG = ((totalRNPG25 - totalRNPG24) / totalRNPG24) * 100;
+  const pe24Global = calcPE24Harmonique(activeData);
+
+  // DY 2025 moyen pondéré par flottant
+  const validDY = activeData.filter(d => d.dy25 != null && d.flottant > 0);
+  const totalFlotDY = validDY.reduce((s,d) => s + d.flottant, 0);
+  const dy25Global = totalFlotDY > 0 ? validDY.reduce((s,d) => s + d.dy25 * (d.flottant / totalFlotDY), 0) : null;
+  // DY 2024 pour comparaison
+  // DY 2024 : pondéré par poids24 (capi flottante 2024) — bruts, SOMMEPROD direct
+  const validDY24 = activeData.filter(d => d.dy24 != null && d.poids24 > 0);
+  const dy24Global = validDY24.length > 0 ? validDY24.reduce((s,d) => s + d.dy24 * d.poids24, 0) : null;
+
+  const vsPEStr = pe24Global ? 'PE 2024 : ' + pe24Global.toFixed(1) + 'x' : '';
+  const vsDYStr = dy24Global != null ? 'DY 2024 : ' + (dy24Global*100).toFixed(1) + '%' : '';
+  const vsRNPGStr = totalRNPG24 ? 'RNPG 2024 : ' + (totalRNPG24/1e9).toLocaleString('fr-FR',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' Mrds' : '';
+
+  const totalExcl = excludedTickers.size + excludedSectors.size;
+  const filteredNote = isFiltered ? `hors ${totalExcl} exclusion(s)` : null;
+  const kpiCards = [
+    { label: "Capitalisation totale", value: (totalCapi/1e9).toLocaleString('fr-FR',{minimumFractionDigits:1,maximumFractionDigits:1}) + " Mrds MAD", sub: `${activeData.length} valeurs · Part MASI : ${(PART_MASI*100).toFixed(1)}%`, extra: filteredNote },
+    { label: "RNPG 2025 total", value: (totalRNPG25/1e9).toLocaleString('fr-FR',{minimumFractionDigits:1,maximumFractionDigits:1}) + " Mrds MAD", sub: `+${varRNPG.toFixed(1)}% vs 2024`, extra: vsRNPGStr },
+    { label: "PE 2025 (moy. harmonique)", value: pe25Global ? pe25Global.toFixed(1) + "x" : "—", sub: "Pondéré · RNPG 2025", extra: vsPEStr },
+    { label: "DY 2025 (moy. pondérée)", value: dy25Global != null ? (dy25Global*100).toFixed(1) + "%" : "—", sub: "Pondéré · capi flottante", extra: vsDYStr },
+  ];
+
+  document.getElementById('kpiGrid').innerHTML = kpiCards.map(k => `
+    <div class="kpi-card">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+      ${k.extra ? `<div class="kpi-extra">${k.extra}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+// Populate sector filter
+function buildSectorFilter() {
+  const sectors = [...new Set(RAW_DATA.map(d => d.secteur))].sort();
+  const sel = document.getElementById('sectorFilter');
+  sectors.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    sel.appendChild(opt);
+  });
+}
+
+// Build table
+function renderTable() {
+  const body = document.getElementById('tableBody');
+  document.getElementById('rowCount').textContent = filteredData.length + ' valeurs';
+  // Mettre à jour la master checkbox
+  const masterChk = document.getElementById('uncheckAll');
+  if (masterChk) masterChk.checked = excludedTickers.size > 0;
+
+  body.innerHTML = filteredData.map(d => {
+    const varR = varRNPG(d);
+    const varStr = varR !== null ? (varR >= 0 ? `<span class="var-positive">+${varR.toFixed(1)}%</span>` : `<span class="var-negative">${varR.toFixed(1)}%</span>`) : '—';
+    const color = SECTOR_COLORS[d.secteur] || '#888';
+    const sectorTag = `<span class="sector-tag" style="background:${color}22; color:${color}; border:1px solid ${color}44">${d.secteur}</span>`;
+    const isExcl = excludedTickers.has(d.ticker);
+    return `
+      <tr class="${isExcl ? 'excluded-row' : ''}">
+        <td class="excl-chk-cell"><input type="checkbox" class="excl-chk" ${isExcl ? 'checked' : ''} onchange="toggleExcludeChk('${d.ticker}', this)" title="Exclure des métriques"></td>
+        <td class="ticker">${d.ticker}</td>
+        <td>${sectorTag}</td>
+        <td class="num">${d.nb_titres != null ? Math.round(d.nb_titres).toLocaleString('fr-FR') : '—'}</td>
+        <td class="num">${d.poids != null ? (d.poids*100).toFixed(2)+'%' : '—'}</td>
+        <td class="num">${d.div25 != null ? d.div25.toLocaleString('fr-FR', {minimumFractionDigits:1,maximumFractionDigits:1}) : '—'}</td>
+        <td class="num">${d.poids_masi != null ? (d.poids_masi*100).toFixed(2)+'%' : '—'}</td>
+        <td class="num">${fmtCours(d.cours)}</td>
+        <td class="num">${fmt(d.capi)}</td>
+        <td class="num">${fmt(d.flottant)}</td>
+        <td class="num">${fmt(d.rnpg24)}</td>
+        <td class="num">${fmt(d.rnpg25)}</td>
+        <td class="num">${varStr}</td>
+        <td class="num">${fmt(d.ca24)}</td>
+        <td class="num">${fmt(d.ca25)}</td>
+        <td class="num"><span class="pe-badge ${getPeClass(d.pe24)}">${d.pe24 ? d.pe24.toFixed(1)+'x' : '—'}</span></td>
+        <td class="num"><span class="pe-badge ${getPeClass(d.pe25)}">${d.pe25 ? d.pe25.toFixed(1)+'x' : '—'}</span></td>
+        <td class="num">${d.dy24 != null ? (d.dy24*100).toFixed(1)+'%' : '—'}</td>
+        <td class="num">${d.dy25 != null ? (d.dy25*100).toFixed(1)+'%' : '—'}</td>
+      </tr>`;
+  }).join('');
+}
+
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const sec = document.getElementById('sectorFilter').value;
+  filteredData = RAW_DATA.filter(d => {
+    const matchQ = !q || d.name.toLowerCase().includes(q) || d.ticker.toLowerCase().includes(q) || d.secteur.toLowerCase().includes(q);
+    const matchS = !sec || d.secteur === sec;
+    return matchQ && matchS;
+  });
+  renderTable();
+}
+
+let currentSortCol = null;
+let currentSortAsc = true;
+
+function sortByCol(col) {
+  if (currentSortCol === col) {
+    currentSortAsc = !currentSortAsc;
+  } else {
+    currentSortCol = col;
+    currentSortAsc = col === 'ticker' || col === 'secteur'; // texte: asc par défaut, num: desc
+  }
+
+  filteredData.sort((a, b) => {
+    let va, vb;
+    if (col === 'var') {
+      va = varRNPG(a) ?? -Infinity;
+      vb = varRNPG(b) ?? -Infinity;
+    } else if (col === 'ticker' || col === 'secteur') {
+      va = (a[col] || '').toLowerCase();
+      vb = (b[col] || '').toLowerCase();
+      return currentSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    } else {
+      va = a[col] ?? -Infinity;
+      vb = b[col] ?? -Infinity;
+    }
+    return currentSortAsc ? va - vb : vb - va;
+  });
+
+  // Mettre à jour les flèches
+  document.querySelectorAll('.sort-arrow').forEach(el => el.textContent = '');
+  const arrow = document.getElementById('sort-' + col);
+  if (arrow) arrow.textContent = currentSortAsc ? ' ↑' : ' ↓';
+
+  renderTable();
+}
+
+function sortAndRender() {
+  const val = document.getElementById('sortSelect').value;
+  if (!val) { filteredData = [...RAW_DATA]; filterTable(); return; }
+  const sorted = [...filteredData];
+  if (val === 'cours') sorted.sort((a,b) => b.cours - a.cours);
+  else if (val === 'capi') sorted.sort((a,b) => b.capi - a.capi);
+  else if (val === 'pe24_asc') sorted.sort((a,b) => a.pe24 - b.pe24);
+  else if (val === 'pe24_desc') sorted.sort((a,b) => b.pe24 - a.pe24);
+  else if (val === 'pe25_asc') sorted.sort((a,b) => a.pe25 - b.pe25);
+  else if (val === 'pe25_desc') sorted.sort((a,b) => b.pe25 - a.pe25);
+  else if (val === 'var') sorted.sort((a,b) => (varRNPG(b)||0) - (varRNPG(a)||0));
+  filteredData = sorted;
+  renderTable();
+}
+
+// CHARTS
+function buildCharts() {
+  // Top 10 capi
+  const top10 = [...RAW_DATA].sort((a,b) => b.capi - a.capi).slice(0,10);
+  const maxCapi = top10[0].capi;
+  document.getElementById('capiChart').innerHTML = top10.map(d => {
+    const pct = (d.capi / maxCapi * 100).toFixed(1);
+    const color = SECTOR_COLORS[d.secteur] || '#0077ff';
+    return `
+      <div class="bar-row">
+        <span class="bar-label">${d.ticker}</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%; background:${color}">${(d.capi/1e9).toFixed(0)} Md</div>
+        </div>
+        <span class="bar-val">${(d.capi/1e9).toFixed(0)} Md</span>
+      </div>`;
+  }).join('');
+
+  // PE chart : PE 2025 uniquement, trié croissant
+  const peData = [...RAW_DATA].filter(d => d.pe25).sort((a,b) => a.pe25 - b.pe25);
+  const maxPE = Math.max(...peData.map(d => d.pe25));
+  document.getElementById('peChart').innerHTML = peData.map(d => {
+    const pct = (d.pe25 / maxPE * 100).toFixed(1);
+    const col = d.pe25 <= 15 ? '#00e5a0' : d.pe25 <= 25 ? '#ffd32a' : '#ff4757';
+    return '<div class="bar-row">' +
+      '<span class="bar-label">' + d.ticker + '</span>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + col + '">' + d.pe25.toFixed(1) + 'x</div></div>' +
+      '<span class="bar-val">' + d.pe25.toFixed(1) + 'x</span></div>';
+  }).join('');
+
+  // Var RNPG — toutes les valeurs sans filtre ni troncature
+  const varData = RAW_DATA.map(d => ({...d, varR: varRNPG(d)})).filter(d => d.varR !== null).sort((a,b) => b.varR - a.varR);
+  const maxVar = Math.max(...varData.map(d=>Math.abs(d.varR)));
+  document.getElementById('varChart').innerHTML = varData.map(d => {
+    const pct = (Math.abs(d.varR) / maxVar * 100).toFixed(1);
+    const color = d.varR >= 0 ? '#00e5a0' : '#ff4757';
+    const sign = d.varR >= 0 ? '+' : '';
+    return `
+      <div class="bar-row">
+        <span class="bar-label">${d.ticker}</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%; background:${color}">${sign}${d.varR.toFixed(0)}%</div>
+        </div>
+        <span class="bar-val" style="color:${color}">${sign}${d.varR.toFixed(0)}%</span>
+      </div>`;
+  }).join('');
+
+  // Donut by sector
+  const bySector = {};
+  RAW_DATA.forEach(d => {
+    if (!bySector[d.secteur]) bySector[d.secteur] = 0;
+    bySector[d.secteur] += d.capi;
+  });
+  const total = Object.values(bySector).reduce((s,v)=>s+v,0);
+  const sorted = Object.entries(bySector).sort((a,b)=>b[1]-a[1]);
+
+  // SVG donut
+  const cx=80, cy=80, r=60, innerR=35;
+  let svgPaths = '', startAngle = -Math.PI/2;
+  const legendItems = sorted.map(([sec, val]) => {
+    const pct = val/total;
+    const angle = pct * 2 * Math.PI;
+    const x1 = cx + r * Math.cos(startAngle);
+    const y1 = cy + r * Math.sin(startAngle);
+    const x2 = cx + r * Math.cos(startAngle + angle);
+    const y2 = cy + r * Math.sin(startAngle + angle);
+    const xi1 = cx + innerR * Math.cos(startAngle);
+    const yi1 = cy + innerR * Math.sin(startAngle);
+    const xi2 = cx + innerR * Math.cos(startAngle + angle);
+    const yi2 = cy + innerR * Math.sin(startAngle + angle);
+    const largeArc = angle > Math.PI ? 1 : 0;
+    const color = SECTOR_COLORS[sec] || '#888';
+    svgPaths += `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${innerR} ${innerR} 0 ${largeArc} 0 ${xi1} ${yi1} Z" fill="${color}" opacity="0.85" stroke="#0a0e1a" stroke-width="1.5"/>`;
+    startAngle += angle;
+    return `<div class="legend-item"><span class="legend-dot" style="background:${color}"></span><span>${sec}</span><span class="legend-pct">${(pct*100).toFixed(1)}%</span></div>`;
+  });
+
+  document.getElementById('donutChart').innerHTML = `
+    <div class="donut-wrap">
+      <svg viewBox="0 0 160 160" width="160" height="160" style="flex-shrink:0">${svgPaths}</svg>
+      <div class="donut-legend">${legendItems.join('')}</div>
+    </div>`;
+}
+
+// Sectors table
+function buildSectorsTable() {
+  const bySectorMap = {};
+  RAW_DATA.forEach(d => {
+    if (!bySectorMap[d.secteur]) bySectorMap[d.secteur] = { count:0, capi:0, rnpg25:0, ca25:0, titres:[] };
+    bySectorMap[d.secteur].count++;
+    bySectorMap[d.secteur].capi += d.capi;
+    bySectorMap[d.secteur].rnpg25 += d.rnpg25||0;
+    bySectorMap[d.secteur].ca25 += d.ca25||0;
+    bySectorMap[d.secteur].titres.push(d);
+  });
+  const totalCapi = RAW_DATA.reduce((s,d)=>s+d.capi,0);
+  const sorted = Object.entries(bySectorMap).sort((a,b)=>b[1].capi-a[1].capi);
+  const maxCapi = sorted[0][1].capi;
+  // Rename for template compatibility
+  const bySector = bySectorMap;
+
+  document.getElementById('sectorBody').innerHTML = sorted.map(([sec, v]) => {
+    const pct = (v.capi/totalCapi*100).toFixed(1);
+    const pe24Sec = calcPE24Harmonique(v.titres);
+    const pe25Sec2 = calcPE25Harmonique(v.titres);
+    const sectorPE25 = pe24Sec ? pe24Sec.toFixed(1) : '—';
+    const sectorPE = pe25Sec2 ? pe25Sec2.toFixed(1) : '—';
+    const color = SECTOR_COLORS[sec] || '#888';
+    const barPct = (v.capi / maxCapi * 100).toFixed(0);
+    return `
+      <tr>
+        <td><span class="sector-tag" style="background:${color}22; color:${color}; border:1px solid ${color}44">${sec}</span></td>
+        <td class="num">${v.count}</td>
+        <td class="num">${fmt(v.capi)}</td>
+        <td class="num">${pct}%</td>
+        <td class="num">${fmt(v.rnpg25)}</td>
+        <td class="num">${fmt(v.ca25)}</td>
+        <td class="num">${sectorPE25}x</td>
+        <td class="num">${sectorPE}x</td>
+        <td style="min-width:120px">
+          <div class="progress-mini"><div class="progress-mini-fill" style="width:${barPct}%"></div></div>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+// Tab switching
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  ['table','charts','secteurs'].forEach(t => {
+    const el = document.getElementById('section-'+t);
+    if (el) {
+      el.className = t === 'charts' ? 'charts-section' : 'table-section';
+      if (t === name) el.classList.add('active');
+    }
+  });
+}
+
+// EXPORT EXCEL
+function exportExcel() {
+  const wb = XLSX.utils.book_new();
+
+  // Main sheet
+  const mainData = RAW_DATA.map(d => ({
+    'Code ISIN': d.isin,
+    'Société': d.name,
+    'Ticker': d.ticker,
+    'Secteur': d.secteur,
+    'Cours 18/03/2026 (MAD)': d.cours,
+    'Capitalisation (MAD)': d.capi,
+    'Capi Flottante (MAD)': d.flottant,
+    'RNPG 2024 (MAD)': d.rnpg24,
+    'RNPG 2025 (MAD)': d.rnpg25,
+    'Var RNPG 2025/2024 (%)': varRNPG(d) ? parseFloat(varRNPG(d).toFixed(2)) : null,
+    'CA 2024 (MAD)': d.ca24,
+    'CA 2025 (MAD)': d.ca25,
+    'PE 2024 (harmonique·RNPG24)': d.pe24,
+    'PE 2025 (harmonique·RNPG25)': d.pe25,
+    'DY 2024 (%)': d.dy24 != null ? parseFloat((d.dy24*100).toFixed(2)) : null,
+    'Nb Titres': d.nb_titres != null ? Math.round(d.nb_titres) : null,
+    'Poids (%)': d.poids != null ? parseFloat((d.poids*100).toFixed(4)) : null,
+    'Div 2025 (MAD)': d.div25,
+    'Poids MASI (%)': d.poids_masi != null ? parseFloat((d.poids_masi*100).toFixed(4)) : null,
+    'DY 2025 (%)': d.dy25 != null ? parseFloat((d.dy25*100).toFixed(2)) : null
+  }));
+  const ws1 = XLSX.utils.json_to_sheet(mainData);
+  ws1['!cols'] = [14,24,12,22,18,20,20,18,18,18,18,18,10,10].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, ws1, 'Valeurs');
+
+  // Sector synthesis
+  const bySectorExp = {};
+  RAW_DATA.forEach(d => {
+    if (!bySectorExp[d.secteur]) bySectorExp[d.secteur] = { count:0, capi:0, rnpg25:0, ca25:0, titres:[] };
+    bySectorExp[d.secteur].count++;
+    bySectorExp[d.secteur].capi += d.capi;
+    bySectorExp[d.secteur].rnpg25 += d.rnpg25||0;
+    bySectorExp[d.secteur].ca25 += d.ca25||0;
+    bySectorExp[d.secteur].titres.push(d);
+  });
+  const totalCapi = RAW_DATA.reduce((s,d)=>s+d.capi,0);
+  const secData = Object.entries(bySectorExp).sort((a,b)=>b[1].capi-a[1].capi).map(([sec, v]) => ({
+    'Secteur': sec,
+    'Nb valeurs': v.count,
+    'Capitalisation (MAD)': v.capi,
+    '% total': parseFloat((v.capi/totalCapi*100).toFixed(2)),
+    'RNPG 2025 (MAD)': v.rnpg25,
+    'CA 2025 (MAD)': v.ca25,
+    'PE 2024 harmonique': (() => { const p = calcPE24Harmonique(v.titres); return p ? parseFloat(p.toFixed(2)) : null; })(),
+    'PE 2025 harmonique': (() => { const p = calcPE25Harmonique(v.titres); return p ? parseFloat(p.toFixed(2)) : null; })()
+  }));
+  const ws2 = XLSX.utils.json_to_sheet(secData);
+  ws2['!cols'] = [22,12,20,12,20,20,14].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, ws2, 'Synthèse Secteurs');
+
+  XLSX.writeFile(wb, 'bourse_casablanca_642026.xlsx');
+}
+
+// FILE IMPORT
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  loadExcelFile(file);
+}
+
+function loadExcelFile(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: null });
+
+      // Détecter dynamiquement la colonne "Cours xx/xx/xxxx"
+      const coursCol = rows.length > 0
+        ? Object.keys(rows[0]).find(k => k.startsWith('Cours'))
+        : null;
+
+      const parsed = rows
+        .filter(r => r['Code_isin'] && (r['Libellé'] || r['Libellé_court']) && coursCol && r[coursCol])
+        .map(r => {
+          const capi = r['Capitalisation'] || 0;
+          const rnpg25 = r['RNPG 2025'] || 0;
+          const rnpg24 = r['RNPG 2024'] || 0;
+          return {
+            isin: r['Code_isin'],
+            name: r['Libellé'] || r['Libellé_court'],
+            ticker: r['Libellé_court'] || r['Libellé'],
+            secteur: r['Secteur'] || 'Autre',
+            cours: r[coursCol] || 0,
+            capi: capi,
+            flottant: r['Capi flottante'] || 0,
+            rnpg24: rnpg24,
+            rnpg25: rnpg25,
+            ca24: r['CA 2024'] || 0,
+            ca25: r['CA 2025'] || 0,
+            nb_titres: r['Nombre de titre 9/2/2026'] != null ? r['Nombre de titre 9/2/2026'] : null,
+            poids: null, // recalculé après chargement
+            div25: r['div 2025'] != null ? r['div 2025'] : null,
+            poids_masi: r['Poids MASI'] != null ? r['Poids MASI'] : null,
+            dy24: r['DY 2024'] != null ? r['DY 2024'] : null,
+            dy25: r['DY 2025'] != null ? r['DY 2025'] : null,
+            pe24: rnpg24 ? parseFloat((capi / rnpg24).toFixed(2)) : null,
+            pe25: rnpg25 ? parseFloat((capi / rnpg25).toFixed(2)) : null
+          };
+        });
+
+      if (parsed.length === 0) {
+        document.getElementById('importStatus').textContent = '⚠ Aucune donnée reconnue — vérifiez les en-têtes du fichier';
+        document.getElementById('importStatus').className = 'import-status err';
+        return;
+      }
+
+      // Update global data
+      RAW_DATA.length = 0;
+      parsed.forEach(d => RAW_DATA.push(d));
+      filteredData = [...RAW_DATA];
+
+      // Refresh UI
+      excludedTickers.clear();
+      excludedSectors.clear();
+      buildExclusionList();
+      renderTable();
+      buildKPIs();
+      buildSectorFilter();
+      filterTable();
+      buildCharts();
+      buildSectorsTable();
+
+      // Update header
+      const today = new Date().toLocaleDateString('fr-FR', {day:'2-digit', month:'long', year:'numeric'});
+      document.getElementById('headerSub').textContent = `Tableau de Bord · Valeurs Sélectionnées · ${today}`;
+      document.getElementById('headerBadge').textContent = `${parsed.length} valeurs · Données au ${today}`;
+      document.getElementById('importStatus').textContent = `✓ ${parsed.length} valeurs chargées depuis "${file.name}"`;
+      document.getElementById('importStatus').className = 'import-status ok';
+
+    } catch(err) {
+      document.getElementById('importStatus').textContent = '✗ Erreur de lecture : ' + err.message;
+      document.getElementById('importStatus').className = 'import-status err';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// Drag & drop support
+document.addEventListener('dragover', e => {
+  e.preventDefault();
+  document.getElementById('dropOverlay').classList.add('visible');
+});
+document.addEventListener('dragleave', e => {
+  if (!e.relatedTarget) document.getElementById('dropOverlay').classList.remove('visible');
+});
+document.addEventListener('drop', e => {
+  e.preventDefault();
+  document.getElementById('dropOverlay').classList.remove('visible');
+  const file = e.dataTransfer.files[0];
+  if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+    loadExcelFile(file);
+  } else {
+    document.getElementById('importStatus').textContent = '⚠ Fichier non reconnu — utilisez un fichier .xlsx';
+    document.getElementById('importStatus').className = 'import-status err';
+  }
+});
+
+
+;
+
+// Créer la modale une seule fois dans le DOM
+(function() {
+  const overlay = document.createElement('div');
+  overlay.id = 'rfaOverlay';
+  overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;';
+  overlay.innerHTML = `
+    <div id="rfaModal" style="background:#111827;border:1px solid #1e2d45;border-radius:14px;padding:24px;min-width:280px;max-width:360px;font-family:Syne,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,0.8);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <span id="rfaTitle" style="font-size:14px;font-weight:700;color:#e8edf5;">📄 Rapports RFA</span>
+        <button onclick="closeRFA()" style="background:none;border:none;color:#6b7a99;font-size:18px;cursor:pointer;line-height:1;">✕</button>
+      </div>
+      <div id="rfaLinks" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid #1e2d45;">
+        <a href="https://www.ammc.ma/fr/espace-emetteurs/etats-financiers" target="_blank"
+           style="font-size:11px;color:#6b7a99;text-decoration:none;">🔗 Tous les états financiers sur ammc.ma</a>
+      </div>
+    </div>`;
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) closeRFA(); });
+  document.addEventListener('DOMContentLoaded', () => document.body.appendChild(overlay));
+  // fallback si DOMContentLoaded déjà passé
+  if (document.readyState !== 'loading') document.body.appendChild(overlay);
+})();
+
+function closeRFA() {
+  document.getElementById('rfaOverlay').style.display = 'none';
+}
+
+function downloadRFA(ticker, btn) {
+  const rfaTicker = RFA_TICKER_MAP[ticker] || ticker;
+  const years = [2024, 2023, 2022, 2021, 2020];
+  const base = 'https://www.ammc.ma/sites/default/files/';
+
+  document.getElementById('rfaTitle').textContent = '📄 RFA — ' + ticker;
+  document.getElementById('rfaLinks').innerHTML = years.map(y => {
+    const url = base + rfaTicker + '_RFA_' + y + '.pdf';
+    return '<a href="' + url + '" target="_blank" ' +
+      'style="display:flex;align-items:center;justify-content:space-between;' +
+      'padding:10px 14px;border-radius:8px;background:#1c2535;border:1px solid #1e2d45;' +
+      'color:#0077ff;font-size:12px;font-weight:600;text-decoration:none;transition:border-color 0.15s;" ' +
+      'onmouseover="this.style.borderColor=\'#0077ff\'" onmouseout="this.style.borderColor=\'#1e2d45\'">' +
+      '<span>Rapport Annuel ' + y + '</span>' +
+      '<span style="font-size:10px;color:#6b7a99;">↗ PDF</span></a>';
+  }).join('');
+
+  const overlay = document.getElementById('rfaOverlay');
+  overlay.style.display = 'flex';
+}
+
+
+// ════════════════════════════════════════════════════════
+// COURS EN TEMPS RÉEL — GitHub (scraper CDG Capital Bourse)
+// ════════════════════════════════════════════════════════
+
+// ⚠ À REMPLACER par ton URL GitHub après création du repo
+// Format : https://raw.githubusercontent.com/TON_USERNAME/bourse-casa-cours/main/data/cours.json
+let COURS_JSON_URL = localStorage.getItem('coursJsonUrl') || 'https://raw.githubusercontent.com/AElouizi/bourse-casa-cours/main/data/cours.json';
+
+let liveCoursActive = false;
+let liveUpdateInterval = null;
+
+// Mapping nom complet → ticker du tableau de bord
+function buildNameMap() {
+  const map = {};
+  RAW_DATA.forEach(d => {
+    map[d.ticker.toUpperCase()] = d.ticker;
+    map[d.name.toUpperCase()] = d.ticker;
+    // Variations courantes
+    const shorts = d.ticker.toUpperCase().split(' ');
+    shorts.forEach(s => { if (s.length > 1) map[s] = d.ticker; });
+  });
+  return map;
+}
+
+async function fetchLiveCours() {
+  const statusEl = document.getElementById('liveStatus');
+
+  if (!COURS_JSON_URL) {
+    if (statusEl) { statusEl.textContent = '⚠ URL GitHub non configurée — cliquer ⚙'; statusEl.className = 'live-cours-status warn'; }
+    return;
+  }
+
+  if (statusEl) { statusEl.textContent = '⏳ Vérification des cours...'; statusEl.className = 'live-cours-status loading'; }
+
+  try {
+    const url = COURS_JSON_URL + '?t=' + Date.now();
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+
+    if (!data.cours || Object.keys(data.cours).length === 0) {
+      if (statusEl) {
+        statusEl.textContent = 'Prochaine mise à jour : 17h00 (lun-ven) · Dernière : ' + (data.date || 'N/A');
+        statusEl.className = 'live-cours-status';
+      }
+      return;
+    }
+
+    const nameMap = buildNameMap();
+    let updated = 0;
+
+    Object.entries(data.cours).forEach(([name, price]) => {
+      const ticker = nameMap[name.toUpperCase()];
+      if (!ticker || !price || price <= 0) return;
+      const d = RAW_DATA.find(r => r.ticker === ticker);
+      if (!d) return;
+      d.cours = price;
+      if (d.nb_titres) d.capi = price * d.nb_titres;
+      if (d.rnpg25 && d.capi) d.pe25 = parseFloat((d.capi / d.rnpg25).toFixed(2));
+      updated++;
+    });
+
+    if (updated > 0) {
+      filteredData = [...RAW_DATA];
+      buildKPIs();
+      renderTable();
+      if (statusEl) {
+        statusEl.textContent = `✓ ${updated} cours mis à jour · Séance du ${data.date} à ${data.time}`;
+        statusEl.className = 'live-cours-status ok';
+      }
+    } else {
+      if (statusEl) { statusEl.textContent = `⚠ Cours chargés (${Object.keys(data.cours).length}) mais aucun ticker correspondant`; statusEl.className = 'live-cours-status warn'; }
+    }
+
+  } catch(err) {
+    if (statusEl) { statusEl.textContent = `✗ Erreur: ${err.message}`; statusEl.className = 'live-cours-status err'; }
+    console.warn('Cours JSON error:', err);
+  }
+}
+
+function toggleLiveCours(btn) {
+  liveCoursActive = !liveCoursActive;
+  if (liveCoursActive) {
+    btn.textContent = '⏹ Arrêter';
+    btn.classList.add('active');
+    fetchLiveCours();
+    liveUpdateInterval = setInterval(fetchLiveCours, 300000); // toutes les 5 min
+  } else {
+    btn.textContent = '▶ Actualiser les cours';
+    btn.classList.remove('active');
+    clearInterval(liveUpdateInterval);
+    const statusEl = document.getElementById('liveStatus');
+    if (statusEl) statusEl.textContent = 'Cours statiques (données du fichier Excel)';
+  }
+}
+
+function configureUrl() {
+  const url = prompt(
+    "Entrez l'URL GitHub de votre cours.json :\n\nFormat : https://raw.githubusercontent.com/TON_USERNAME/bourse-casa-cours/main/data/cours.json",
+    COURS_JSON_URL
+  );
+  if (url !== null) {
+    COURS_JSON_URL = url.trim();
+    localStorage.setItem('coursJsonUrl', COURS_JSON_URL);
+    const statusEl = document.getElementById('liveStatus');
+    if (COURS_JSON_URL) {
+      if (statusEl) statusEl.textContent = '✓ URL configurée — cliquer "Actualiser" pour charger';
+      document.getElementById('btnLive').disabled = false;
+    } else {
+      if (statusEl) statusEl.textContent = '⚠ URL non configurée';
+    }
+  }
+}
+
+// Charger automatiquement au démarrage si URL configurée
+// Pas de chargement automatique au démarrage — données Excel affichées par défaut
+// Le bouton ▶ permet de charger les cours mis à jour depuis GitHub
+
+// INIT
+buildExclusionList();
+buildKPIs();
+buildSectorFilter();
+filterTable();
+buildCharts();
+buildSectorsTable();
+</script>
+</body>
+</html>
