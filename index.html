@@ -1769,6 +1769,12 @@ async function fetchLiveCours() {
       const headerBadge = document.getElementById('headerBadge');
       if (headerSub) headerSub.textContent = 'Tableau de Bord · Valeurs Sélectionnées · ' + dateFr;
       if (headerBadge) headerBadge.textContent = RAW_DATA.length + ' valeurs · Cours au ' + data.date + ' ' + data.time;
+      // Sauvegarder les cours dans localStorage pour persistence
+      try {
+        const savedCours = {};
+        RAW_DATA.forEach(d => { savedCours[d.ticker] = { cours: d.cours, capi: d.capi, pe25: d.pe25 }; });
+        localStorage.setItem('savedCours', JSON.stringify({ date: data.date, time: data.time, cours: savedCours }));
+      } catch(e) {}
       if (statusEl) {
         statusEl.textContent = `✓ ${updated}/${RAW_DATA.length} cours mis à jour · Séance du ${data.date} à ${data.time}`;
         statusEl.className = 'live-cours-status ok';
@@ -1821,7 +1827,36 @@ function configureUrl() {
 // Pas de chargement automatique au démarrage — données Excel affichées par défaut
 // Le bouton ▶ permet de charger les cours mis à jour depuis GitHub
 
-// INIT
+// INIT — restaurer les cours sauvegardés si disponibles
+(function restoreSavedCours() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('savedCours') || 'null');
+    if (!saved || !saved.cours) return;
+    let restored = 0;
+    RAW_DATA.forEach(d => {
+      const s = saved.cours[d.ticker];
+      if (!s) return;
+      d.cours = s.cours;
+      d.capi  = s.capi;
+      d.pe25  = s.pe25;
+      restored++;
+    });
+    if (restored > 0) {
+      // Mettre à jour le header avec la date sauvegardée
+      const dateFr = new Date(saved.date).toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'});
+      const headerSub = document.getElementById('headerSub');
+      const headerBadge = document.getElementById('headerBadge');
+      if (headerSub) headerSub.textContent = 'Tableau de Bord · Valeurs Sélectionnées · ' + dateFr;
+      if (headerBadge) headerBadge.textContent = RAW_DATA.length + ' valeurs · Cours au ' + saved.date + ' ' + saved.time;
+      const statusEl = document.getElementById('liveStatus');
+      if (statusEl) {
+        statusEl.textContent = `✓ Cours restaurés · Séance du ${saved.date} à ${saved.time}`;
+        statusEl.className = 'live-cours-status ok';
+      }
+    }
+  } catch(e) {}
+})();
+
 buildExclusionList();
 buildKPIs();
 buildSectorFilter();
