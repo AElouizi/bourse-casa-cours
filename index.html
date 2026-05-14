@@ -845,14 +845,14 @@
       ⬆ Charger un fichier Excel
     </button>
     <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFileUpload(event)">
-    <span class="import-status" id="importStatus">Données intégrées · 6/4/2026 · 78 valeurs"header-inner">
+    <span class="import-status" id="importStatus">Données intégrées · 13/05/2026 · 78 valeurs"header-inner">
       <div class="logo-area">
         <h1>BOURSE DE CASABLANCA</h1>
         <p id="headerSub">Tableau de Bord · Valeurs Sélectionnées · 6 Avril 2026</p>
       </div>
       <div class="header-badge">
         <span class="live-dot"></span>
-        <span id="headerBadge">78 valeurs · Données au 6/4/2026</span>
+        <span id="headerBadge">78 valeurs · Données au 13/05/2026</span>
       </div>
     </div>
   </header>
@@ -1854,6 +1854,11 @@ async function fetchLiveCours() {
         statusEl.textContent = `✓ ${updated} cours mis à jour · Séance du ${data.date} à ${data.time}`;
         statusEl.className = 'live-cours-status ok';
       }
+      // Mettre à jour la date dans le badge header
+      const badge = document.getElementById('headerBadge');
+      if (badge) badge.textContent = `${RAW_DATA.length} valeurs · Cours au ${data.date}`;
+      const importSt = document.getElementById('importStatus');
+      if (importSt) importSt.textContent = `Données intégrées · ${data.date} · ${RAW_DATA.length} valeurs`;
       // Persister l'état actualisé dans localStorage
       try {
         const snapshot = {
@@ -1951,13 +1956,17 @@ filterTable();
 buildCharts();
 buildSectorsTable();
 
-// Afficher le statut APRÈS que le DOM est rendu
+// Afficher le statut et mettre à jour le badge APRÈS que le DOM est rendu
 if (_restoredSnap) {
   const statusEl = document.getElementById('liveStatus');
   if (statusEl && _restoredSnap.date) {
     statusEl.textContent = `↺ Cours du ${_restoredSnap.date} à ${_restoredSnap.time} (mémorisés)`;
     statusEl.className = 'live-cours-status ok';
   }
+  const badge = document.getElementById('headerBadge');
+  if (badge && _restoredSnap.date) badge.textContent = `${RAW_DATA.length} valeurs · Cours au ${_restoredSnap.date}`;
+  const importSt = document.getElementById('importStatus');
+  if (importSt && _restoredSnap.date) importSt.textContent = `Données intégrées · ${_restoredSnap.date} · ${RAW_DATA.length} valeurs`;
 }
 </script>
 </body>
