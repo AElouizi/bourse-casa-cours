@@ -1838,36 +1838,34 @@ function configureUrl() {
 // Pas de chargement automatique au démarrage — données Excel affichées par défaut
 // Le bouton ▶ permet de charger les cours mis à jour depuis GitHub
 
-// INIT — restaurer le dernier snapshot si disponible
-(function restoreSnapshot() {
-  try {
-    const raw = localStorage.getItem('bourseSnapshot');
-    if (!raw) return;
+// INIT
+function applySnapshot(snap) {
+  if (!snap || !snap.cours) return false;
+  RAW_DATA.forEach(d => {
+    const v = snap.cours[d.ticker];
+    if (!v) return;
+    if (v.cours       != null) d.cours       = v.cours;
+    if (v.capi        != null) d.capi        = v.capi;
+    if (v.flottant    != null) d.flottant    = v.flottant;
+    if (v.pe24        != null) d.pe24        = v.pe24;
+    if (v.pe25        != null) d.pe25        = v.pe25;
+    if (v.dy24        != null) d.dy24        = v.dy24;
+    if (v.dy25        != null) d.dy25        = v.dy25;
+    if (v.poids       != null) d.poids       = v.poids;
+    if (v.poids_masi  != null) d.poids_masi  = v.poids_masi;
+  });
+  return true;
+}
+
+// Restaurer snapshot AVANT tout rendu
+let _restoredSnap = null;
+try {
+  const raw = localStorage.getItem('bourseSnapshot');
+  if (raw) {
     const snap = JSON.parse(raw);
-    if (!snap || !snap.cours) return;
-    const totalFlottantSnap = Object.values(snap.cours).reduce((s, v) => s + (v.flottant || 0), 0);
-    RAW_DATA.forEach(d => {
-      const v = snap.cours[d.ticker];
-      if (!v) return;
-      d.cours       = v.cours       ?? d.cours;
-      d.capi        = v.capi        ?? d.capi;
-      d.flottant    = v.flottant    ?? d.flottant;
-      d.pe24        = v.pe24        ?? d.pe24;
-      d.pe25        = v.pe25        ?? d.pe25;
-      d.dy24        = v.dy24        ?? d.dy24;
-      d.dy25        = v.dy25        ?? d.dy25;
-      d.poids       = v.poids       ?? d.poids;
-      d.poids_masi  = v.poids_masi  ?? d.poids_masi;
-    });
-    filteredData = [...RAW_DATA];
-    // Afficher la date du dernier snapshot dans le statut
-    const statusEl = document.getElementById('liveStatus');
-    if (statusEl && snap.date) {
-      statusEl.textContent = `↺ Dernière mise à jour : ${snap.date} à ${snap.time} (restaurée)`;
-      statusEl.className = 'live-cours-status ok';
-    }
-  } catch(e) { console.warn('Snapshot restore failed', e); }
-})();
+    if (applySnapshot(snap)) _restoredSnap = snap;
+  }
+} catch(e) { console.warn('Snapshot restore failed', e); }
 
 buildExclusionList();
 buildKPIs();
@@ -1875,6 +1873,15 @@ buildSectorFilter();
 filterTable();
 buildCharts();
 buildSectorsTable();
+
+// Afficher le statut APRÈS que le DOM est rendu
+if (_restoredSnap) {
+  const statusEl = document.getElementById('liveStatus');
+  if (statusEl && _restoredSnap.date) {
+    statusEl.textContent = `↺ Cours du ${_restoredSnap.date} à ${_restoredSnap.time} (mémorisés)`;
+    statusEl.className = 'live-cours-status ok';
+  }
+}
 </script>
 </body>
 </html>
