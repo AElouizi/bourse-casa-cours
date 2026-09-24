@@ -845,14 +845,19 @@
       ⬆ Charger un fichier Excel
     </button>
     <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFileUpload(event)">
-    <span class="import-status" id="importStatus">Données intégrées · 13/05/2026 · 78 valeurs"header-inner">
+    <span class="import-status" id="importStatus">Données intégrées · 23/09/2026 · 79 valeurs</span>
+  </div>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-inner">
       <div class="logo-area">
         <h1>BOURSE DE CASABLANCA</h1>
-        <p id="headerSub">Tableau de Bord · Valeurs Sélectionnées · 6 Avril 2026</p>
+        <p id="headerSub">Tableau de Bord · Résultats S1 2026 vs 2025 · 23 septembre 2026</p>
       </div>
       <div class="header-badge">
         <span class="live-dot"></span>
-        <span id="headerBadge">78 valeurs · Données au 13/05/2026</span>
+        <span id="headerBadge">79 valeurs · Données au 23/09/2026</span>
       </div>
     </div>
   </header>
@@ -907,10 +912,10 @@
         <option value="">Trier par...</option>
         <option value="cours">Cours (↓)</option>
         <option value="capi">Capitalisation (↓)</option>
-        <option value="pe24_asc">PE 2024 (↑)</option>
-        <option value="pe24_desc">PE 2024 (↓)</option>
         <option value="pe25_asc">PE 2025 (↑)</option>
         <option value="pe25_desc">PE 2025 (↓)</option>
+        <option value="pe26_asc">PE 2026e (↑)</option>
+        <option value="pe26_desc">PE 2026e (↓)</option>
         <option value="var">Variation RNPG (↓)</option>
       </select>
       <button class="btn-export" onclick="exportExcel()">
@@ -937,13 +942,14 @@
               <th class="num" onclick="sortByCol('cours')" data-col="cours">Cours<br><span class="th-unit">(MAD)</span> <span class="sort-arrow" id="sort-cours"></span></th>
               <th class="num" onclick="sortByCol('capi')" data-col="capi">Capitalisation<br><span class="th-unit">(MMAD)</span> <span class="sort-arrow" id="sort-capi"></span></th>
               <th class="num" onclick="sortByCol('flottant')" data-col="flottant">Capi Flottante<br><span class="th-unit">(MMAD)</span> <span class="sort-arrow" id="sort-flottant"></span></th>
-              <th class="num" onclick="sortByCol('rnpg24')" data-col="rnpg24">RNPG 2024<br><span class="th-unit">(MMAD)</span> <span class="sort-arrow" id="sort-rnpg24"></span></th>
               <th class="num" onclick="sortByCol('rnpg25')" data-col="rnpg25">RNPG 2025<br><span class="th-unit">(MMAD)</span> <span class="sort-arrow" id="sort-rnpg25"></span></th>
-              <th class="num" onclick="sortByCol('var')" data-col="var">Var RNPG <span class="sort-arrow" id="sort-var"></span></th>
+              <th class="num" onclick="sortByCol('rnpg_s1_26')" data-col="rnpg_s1_26">RNPG S1 2026<br><span class="th-unit">(MMAD)</span> <span class="sort-arrow" id="sort-rnpg_s1_26"></span></th>
+              <th class="num" onclick="sortByCol('rnpg26')" data-col="rnpg26">RNPG 2026e<br><span class="th-unit">(S1×2 · MMAD)</span> <span class="sort-arrow" id="sort-rnpg26"></span></th>
+              <th class="num" onclick="sortByCol('var')" data-col="var">Var RNPG<br><span class="th-unit">(26e/25)</span> <span class="sort-arrow" id="sort-var"></span></th>
               <th class="num" onclick="sortByCol('ca24')" data-col="ca24">CA 2024<br><span class="th-unit">(MMAD)</span> <span class="sort-arrow" id="sort-ca24"></span></th>
               <th class="num" onclick="sortByCol('ca25')" data-col="ca25">CA 2025<br><span class="th-unit">(MMAD)</span> <span class="sort-arrow" id="sort-ca25"></span></th>
-              <th class="num" onclick="sortByCol('pe24')" data-col="pe24">PE 2024 <span class="sort-arrow" id="sort-pe24"></span></th>
               <th class="num" onclick="sortByCol('pe25')" data-col="pe25">PE 2025 <span class="sort-arrow" id="sort-pe25"></span></th>
+              <th class="num" onclick="sortByCol('pe26')" data-col="pe26">PE 2026e <span class="sort-arrow" id="sort-pe26"></span></th>
               <th class="num" onclick="sortByCol('dy24')" data-col="dy24">DY 2024 <span class="sort-arrow" id="sort-dy24"></span></th>
               <th class="num" onclick="sortByCol('dy25')" data-col="dy25">DY 2025 <span class="sort-arrow" id="sort-dy25"></span></th>
             </tr>
@@ -962,13 +968,13 @@
         <div id="capiChart" class="bar-chart"></div>
       </div>
       <div class="chart-card">
-        <h3>PE 2025 par valeur (croissant)</h3>
+        <h3>PE 2026e par valeur — valeurs publiées (croissant)</h3>
         <div id="peChart" class="bar-chart"></div>
       </div>
     </div>
     <div class="charts-grid">
       <div class="chart-card">
-        <h3>Variation RNPG 2025/2024 (%)</h3>
+        <h3>Variation RNPG 2026e (S1×2) / 2025 (%)</h3>
         <div id="varChart" class="bar-chart"></div>
       </div>
       <div class="chart-card">
@@ -995,8 +1001,10 @@
               <th class="num">% du total</th>
               <th class="num">RNPG 2025</th>
               <th class="num">CA 2025</th>
-              <th class="num">PE 2024</th>
+              <th class="num">Publiés S1 26</th>
+              <th class="num">Var RNPG 26e/25<br><span class="th-unit">(périm. constant)</span></th>
               <th class="num">PE 2025</th>
+              <th class="num">PE 2026e<br><span class="th-unit">(publiés)</span></th>
               <th class="num">DY 2024</th>
               <th class="num">DY 2025</th>
               <th>Poids</th>
@@ -1011,90 +1019,104 @@
 </div>
 
 <script>
-const RAW_DATA = [{"isin": "MA0000012445", "name": "ATW", "ticker": "ATW", "secteur": "Banque", "cours": 691.0, "cours_prec": 648.0, "nb_titres": 215140839.0, "capi": 148662319749.0, "flottant": 44598695924.7, "rnpg24": 9504486000.0, "rnpg25": 10644000000.0, "ca24": 34507117000.0, "ca25": 34921384000.0, "div25": 22.0, "dy24": 0.027496382054992764, "dy25": 0.03183791606367583, "poids_masi": 0.15761835519780412, "poids24": 0.17595004984368104, "poids": 0.15761835519780412, "pe24_calc": 15.64, "ric": "ATW"},
-{"isin": "MA0000012437", "name": "BOA", "ticker": "BOA", "secteur": "Banque", "cours": 203.1, "cours_prec": 181.22452, "nb_titres": 220281881.0, "capi": 44739250031.1, "flottant": 11184812507.775, "rnpg24": 3427420000.0, "rnpg25": 3813000000.0, "ca24": 18716574000.0, "ca25": 20348000000.0, "div25": 5.0, "dy24": 0.024618414574101428, "dy25": 0.024618414574101428, "poids_masi": 0.039528773523957714, "poids24": 0.050672585163282144, "poids": 0.039528773523957714, "pe24_calc": 13.05, "ric": "BOA"},
-{"isin": "MA0000011884", "name": "BCP", "ticker": "BCP", "secteur": "Banque", "cours": 239.0, "cours_prec": 270.0, "nb_titres": 203312473.0, "capi": 48591681047.0, "flottant": 7288752157.05, "rnpg24": 4145346000.0, "rnpg25": 4501845756.0, "ca24": 25601207000.0, "ca25": 26983672178.0, "div25": 10.5, "dy24": 0.043933054393305436, "dy25": 0.043933054393305436, "poids_masi": 0.025759522842962942, "poids24": 0.0553091012237335, "poids": 0.025759522842962942, "pe24_calc": 11.72, "ric": "BCP"},
-{"isin": "MA0000011454", "name": "CIH", "ticker": "CIH", "secteur": "Banque", "cours": 360.0, "cours_prec": 410.145346, "nb_titres": 35605624.0, "capi": 12818024640.0, "flottant": 3204506160.0, "rnpg24": 875878000.0, "rnpg25": 1089400000.0, "ca24": 4739507000.0, "ca25": 5422500000.0, "div25": 14.0, "dy24": 0.03888888888888889, "dy25": 0.03888888888888889, "poids_masi": 0.01132519639168864, "poids24": 0.017046452548618477, "poids": 0.01132519639168864, "pe24_calc": 14.63, "ric": "CIH"},
-{"isin": "MA0000010381", "name": "CDM", "ticker": "CDM", "secteur": "Banque", "cours": 1001.0, "cours_prec": 1055.78756, "nb_titres": 10881214.0, "capi": 10892095214.0, "flottant": 2723023803.5, "rnpg24": 740949000.0, "rnpg25": 863551000.0, "ca24": 3303182000.0, "ca25": 3568401000.0, "div25": 48.0, "dy24": 0.04165834165834166, "dy25": 0.04795204795204795, "poids_masi": 0.00962356688179388, "poids24": 0.012483483002835463, "poids": 0.00962356688179388, "pe24_calc": 14.7, "ric": "CDM"},
-{"isin": "MA0000010811", "name": "BMCI", "ticker": "BMCI", "secteur": "Banque", "cours": 582.0, "cours_prec": 516.9, "nb_titres": 13279286.0, "capi": 7728544452.0, "flottant": 1545708890.4, "rnpg24": 325146000.0, "rnpg25": 419113194.0, "ca24": 3788722000.0, "ca25": 3940000000.0, "div25": 18.0, "dy24": 0.030927835051546393, "dy25": 0.030927835051546393, "poids_masi": 0.005462762707923499, "poids24": 0.007536587528848647, "poids": 0.005462762707923499, "pe24_calc": 23.77, "ric": "BCI"},
-{"isin": "MA0000012627", "name": "CFG", "ticker": "CFG", "secteur": "Banque", "cours": 206.5, "cours_prec": 215.0, "nb_titres": 35007960.0, "capi": 7229143740.0, "flottant": 6144772179.0, "rnpg24": 261820000.0, "rnpg25": 370445000.0, "ca24": 941408000.0, "ca25": 1247229000.0, "div25": 4.0, "dy24": 0.015980629539951573, "dy25": 0.01937046004842615, "poids_masi": 0.021716529235618492, "poids24": 0.029385462691477123, "poids": 0.021716529235618492, "pe24_calc": 27.61, "ric": "CFG"},
-{"isin": "MA0000011488", "name": "IAM", "ticker": "IAM", "secteur": "Télecommunication", "cours": 94.0, "cours_prec": 111.8, "nb_titres": 879095340.0, "capi": 82634961960.0, "flottant": 16526992392.0, "rnpg24": 5938000000.0, "rnpg25": 5649000000.0, "ca24": 36699000000.0, "ca25": 36681000000.0, "div25": 4.0, "dy24": 0.015212765957446807, "dy25": 0.0425531914893617, "poids_masi": 0.05840882346855717, "poids24": 0.07211365141088433, "poids": 0.05840882346855717, "pe24_calc": 13.92, "ric": "IAM"},
-{"isin": "MA0000012320", "name": "LHM", "ticker": "LHM", "secteur": "Bâtiment et matériaux", "cours": 1853.0, "cours_prec": 1800.0, "nb_titres": 23431240.0, "capi": 43418087720.0, "flottant": 15196330701.999998, "rnpg24": 1825688000.0, "rnpg25": 2166000000.0, "ca24": 8154838000.0, "ca25": 8936000000.0, "div25": 96.0, "dy24": 0.037776578521316787, "dy25": 0.05180787911494873, "poids_masi": 0.05370606921635554, "poids24": 0.06507214517177723, "poids": 0.05370606921635554, "pe24_calc": 23.78, "ric": "LHM"},
-{"isin": "MA0000010506", "name": "CIMAR", "ticker": "CIMAR", "secteur": "Bâtiment et matériaux", "cours": 1685.0, "cours_prec": 1849.0, "nb_titres": 14436004.0, "capi": 24324666740.0, "flottant": 8513633359.0, "rnpg24": 1001000000.0, "rnpg25": 1402000000.0, "ca24": 4990000000.0, "ca25": 5349000000.0, "div25": 65.0, "dy24": 0.03560830860534125, "dy25": 0.03857566765578635, "poids_masi": 0.03008843328218375, "poids24": 0.04058671151237178, "poids": 0.03008843328218375, "pe24_calc": 24.3, "ric": "CMA"},
-{"isin": "MA0000012528", "name": "TGCC", "ticker": "TGCC", "secteur": "Bâtiment et matériaux", "cours": 782.1, "cours_prec": 662.0, "nb_titres": 34674332.0, "capi": 27118795057.2, "flottant": 10847518022.880001, "rnpg24": 646000000.0, "rnpg25": 952000000.0, "ca24": 11745450000.0, "ca25": 12363640000.0, "div25": 15.0, "dy24": 0.014704002045774198, "dy25": 0.019179133103183737, "poids_masi": 0.03833672517312249, "poids24": 0.02376391184868692, "poids": 0.03833672517312249, "pe24_calc": 41.98, "ric": "TGC"},
-{"isin": "MA0000012783", "name": "SGTM", "ticker": "SGTM", "secteur": "Bâtiment et matériaux", "cours": 763.0, "cours_prec": null, "nb_titres": 60000000.0, "capi": 45780000000.0, "flottant": 9156000000.0, "rnpg24": 783000000.0, "rnpg25": 1342000000.0, "ca24": 11098839000.0, "ca25": 15200000000.0, "div25": 12.0, "dy24": 0.0, "dy25": 0.015727391874180863, "poids_masi": 0.032358651531598615, "poids24": 0.0, "poids": 0.032358651531598615, "pe24_calc": 58.47, "ric": "GTM"},
-{"isin": "MA0000010019", "name": "SONASID", "ticker": "SONASID", "secteur": "Bâtiment et matériaux", "cours": 2215.0, "cours_prec": 1920.0, "nb_titres": 3900000.0, "capi": 8638500000.0, "flottant": 3023475000.0, "rnpg24": 141238000.0, "rnpg25": 272000000.0, "ca24": 5494500000.0, "ca25": 6386000000.0, "div25": 52.0, "dy24": 0.017607223476297968, "dy25": 0.02347629796839729, "poids_masi": 0.01068540562904108, "poids24": 0.006301748549651693, "poids": 0.01068540562904108, "pe24_calc": 61.16, "ric": "SID"},
-{"isin": "MA0000012080", "name": "JET", "ticker": "JET", "secteur": "Bâtiment et matériaux", "cours": 2300.0, "cours_prec": 2080.0, "nb_titres": 3029522.0, "capi": 6967900600.0, "flottant": 2787160240.0, "rnpg24": 133000000.0, "rnpg25": 225000000.0, "ca24": 3117729584.6, "ca25": 3648773527.48, "div25": 20.0, "dy24": 0.006521739130434782, "dy25": 0.008695652173913044, "poids_masi": 0.009850234487646, "poids24": 0.009911771642426966, "poids": 0.009850234487646, "pe24_calc": 52.39, "ric": "JET"},
-{"isin": "MA0000011934", "name": "COLORADO", "ticker": "COLORADO", "secteur": "Bâtiment et matériaux", "cours": 80.0, "cours_prec": 59.49, "nb_titres": 16117611.0, "capi": 1289408880.0, "flottant": 451293108.0, "rnpg24": 45337135.25, "rnpg25": 65500000.0, "ca24": 605017873.46, "ca25": 624000000.0, "div25": 3.5, "dy24": 0.0325, "dy25": 0.04375, "poids_masi": 0.0015949362626020203, "poids24": 0.0014259281580801836, "poids": 0.0015949362626020203, "pe24_calc": 28.44, "ric": "COL"},
-{"isin": "MA0000010936", "name": "ALM", "ticker": "ALM", "secteur": "Bâtiment et matériaux", "cours": 1870.0, "cours_prec": 1767.0, "nb_titres": 465954.0, "capi": 871333980.0, "flottant": 261400194.0, "rnpg24": 36838500.0, "rnpg25": 66300000.0, "ca24": 1243449540.0, "ca25": 1304909750.0, "div25": 110.0, "dy24": 0.053475935828877004, "dy25": 0.058823529411764705, "poids_masi": 0.0009238267570924285, "poids24": 0.000934018537401206, "poids": 0.0009238267570924285, "pe24_calc": 23.65, "ric": "ALM"},
-{"isin": "MA0000012114", "name": "AFRIC INDUSTRIES", "ticker": "AFRIC INDUSTRIES", "secteur": "Bâtiment et matériaux", "cours": 343.0, "cours_prec": 325.0, "nb_titres": 291500.0, "capi": 99984500.0, "flottant": 49992250.0, "rnpg24": 9916766.71, "rnpg25": 7530000.0, "ca24": 43110076.58, "ca25": 43952000.0, "div25": 20.0, "dy24": 0.0641399416909621, "dy25": 0.05830903790087463, "poids_masi": 0.00017667996909464403, "poids24": 0.00021131737560770082, "poids": 0.00017667996909464403, "pe24_calc": 10.08, "ric": "AFI"},
-{"isin": "MA0000012247", "name": "COSUMAR", "ticker": "COSUMAR", "secteur": "Agroalimentaire", "cours": 184.1, "cours_prec": 214.95, "nb_titres": 94487143.0, "capi": 17395083026.3, "flottant": 5218524907.889999, "rnpg24": 850200000.0, "rnpg25": 704000000.0, "ca24": 10238600000.0, "ca25": 10487000000.0, "div25": 10.0, "dy24": 0.054318305268875614, "dy25": 0.054318305268875614, "poids_masi": 0.018443035059346902, "poids24": 0.03439253125107481, "poids": 0.018443035059346902, "pe24_calc": 20.46, "ric": "CSR"},
-{"isin": "MA0000012031", "name": "LESIEUR", "ticker": "LESIEUR", "secteur": "Agroalimentaire", "cours": 373.0, "cours_prec": 280.0, "nb_titres": 27631510.0, "capi": 10306553230.0, "flottant": 2576638307.5, "rnpg24": 24000000.0, "rnpg25": 8000000.0, "ca24": 5455000000.0, "ca25": 5378000000.0, "div25": 0.0, "dy24": 0.00804289544235925, "dy25": 0.0, "poids_masi": 0.009106218994687696, "poids24": 0.00922477368442394, "poids": 0.009106218994687696, "pe24_calc": 429.44, "ric": "LES"},
-{"isin": "MA0000012395", "name": "MUTANDIS", "ticker": "MUTANDIS", "secteur": "Agroalimentaire", "cours": 239.0, "cours_prec": 295.0, "nb_titres": 9246737.0, "capi": 2209970143.0, "flottant": 1767976114.4, "rnpg24": 159408000.0, "rnpg25": 126160000.0, "ca24": 2116550000.0, "ca25": 2021823000.0, "div25": 10.5, "dy24": 0.043933054393305436, "dy25": 0.043933054393305436, "poids_masi": 0.006248287789652614, "poids24": 0.010848674373940544, "poids": 0.006248287789652614, "pe24_calc": 13.86, "ric": "MUT"},
-{"isin": "MA0000012023", "name": "UNIMER", "ticker": "UNIMER", "secteur": "Agroalimentaire", "cours": 168.0, "cours_prec": 170.0, "nb_titres": 11413880.0, "capi": 1917531840.0, "flottant": 383506368.0, "rnpg24": -28000000.0, "rnpg25": 11000000.0, "ca24": 1259642000.0, "ca25": 1085000000.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.0013553679469485607, "poids24": 0.0018508246745834076, "poids": 0.0013553679469485607, "pe24_calc": null, "ric": "UMR"},
-{"isin": "MA0000011421", "name": "DARI", "ticker": "DARI", "secteur": "Agroalimentaire", "cours": 4190.0, "cours_prec": 3450.0, "nb_titres": 298375.0, "capi": 1250191250.0, "flottant": 375057375.0, "rnpg24": 43660239.0, "rnpg25": 52395028.0, "ca24": 858916922.0, "ca25": 818399882.0, "div25": 140.0, "dy24": 0.03341288782816229, "dy25": 0.03341288782816229, "poids_masi": 0.0013255079622085087, "poids24": 0.0015735917827239957, "poids": 0.0013255079622085087, "pe24_calc": 28.63, "ric": "DRI"},
-{"isin": "MA0000011868", "name": "CARTIER SAADA", "ticker": "CARTIER SAADA", "secteur": "Agroalimentaire", "cours": 30.2, "cours_prec": 32.11, "nb_titres": 5265000.0, "capi": 159003000.0, "flottant": 39750750.0, "rnpg24": 5736516.56, "rnpg25": 0.0, "ca24": 296694031.26, "ca25": 0.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.0001404850008049032, "poids24": 0.00012806239304708356, "poids": 0.0001404850008049032, "pe24_calc": 27.72, "ric": "CRS"},
-{"isin": "MA0000012312", "name": "MARSA", "ticker": "MARSA", "secteur": "Services de transport", "cours": 843.0, "cours_prec": 695.0, "nb_titres": 73395600.0, "capi": 61872490800.0, "flottant": 21655371779.999996, "rnpg24": 1266979000.0, "rnpg25": 1589000000.0, "ca24": 5008150000.0, "ca25": 5785000000.0, "div25": 11.0, "dy24": 0.011269276393831554, "dy25": 0.013048635824436536, "poids_masi": 0.07653327099347251, "poids24": 0.06468819802109313, "poids": 0.07653327099347251, "pe24_calc": 48.83, "ric": "MSA"},
-{"isin": "MA0000012205", "name": "TAQA", "ticker": "TAQA", "secteur": "Electricité", "cours": 1759.0, "cours_prec": 1954.0, "nb_titres": 23588542.0, "capi": 41492245378.0, "flottant": 6223836806.699999, "rnpg24": 1052824000.0, "rnpg25": 981000000.0, "ca24": 10878079000.0, "ca25": 10638000000.0, "div25": 38.0, "dy24": 0.021034678794769755, "dy25": 0.02160318362706083, "poids_masi": 0.02199595526622354, "poids24": 0.02328758778323033, "poids": 0.02199595526622354, "pe24_calc": 39.41, "ric": "TQM"},
-{"isin": "MA0000012262", "name": "TOTAL", "ticker": "TOTAL", "secteur": "Pétrole et Gaz", "cours": 1600.0, "cours_prec": 1700.0, "nb_titres": 8960000.0, "capi": 14336000000.0, "flottant": 2150400000.0, "rnpg24": 934195000.0, "rnpg25": 851000000.0, "ca24": 16751842000.0, "ca25": 15126000000.0, "div25": 113.0, "dy24": 0.070625, "dy25": 0.070625, "poids_masi": 0.007599830084485546, "poids24": 0.009602053988433045, "poids": 0.007599830084485546, "pe24_calc": 15.35, "ric": "TMA"},
-{"isin": "MA0000010951", "name": "AFRIQUIA GAZ", "ticker": "AFRIQUIA GAZ", "secteur": "Pétrole et Gaz", "cours": 3770.0, "cours_prec": 4100.0, "nb_titres": 3437500.0, "capi": 12959375000.0, "flottant": 3887812500.0, "rnpg24": 747392000.0, "rnpg25": 750500000.0, "ca24": 8989425000.0, "ca25": 8989425000.0, "div25": 175.0, "dy24": 0.046419098143236075, "dy25": 0.046419098143236075, "poids_masi": 0.013740101562657628, "poids24": 0.018689626380398068, "poids": 0.013740101562657628, "pe24_calc": 17.34, "ric": "GAZ"},
-{"isin": "MA0000011801", "name": "LABEL VIE", "ticker": "LABEL VIE", "secteur": "Distribution", "cours": 3950.0, "cours_prec": 4070.0, "nb_titres": 2893957.0, "capi": 11431130150.0, "flottant": 5144008567.5, "rnpg24": 541699404.32, "rnpg25": 578790600.36, "ca24": 18534397910.76, "ca25": 18534397910.0, "div25": 120.0, "dy24": 0.027992405063291138, "dy25": 0.030379746835443037, "poids_masi": 0.018179683345488234, "poids24": 0.024999051644902286, "poids": 0.018179683345488234, "pe24_calc": 21.1, "ric": "LBV"},
-{"isin": "MA0000010969", "name": "AUTO HALL", "ticker": "AUTO HALL", "secteur": "Distribution", "cours": 74.5, "cours_prec": 76.9, "nb_titres": 50294528.0, "capi": 3746942336.0, "flottant": 749388467.2, "rnpg24": 17092037.28, "rnpg25": 100000000.0, "ca24": 5022141140.61, "ca25": 5911000000.0, "div25": 2.0, "dy24": 0.026845637583892617, "dy25": 0.026845637583892617, "poids_masi": 0.0026484491341113607, "poids24": 0.003166268420373792, "poids": 0.0026484491341113607, "pe24_calc": 219.22, "ric": "ATH"},
-{"isin": "MA0000011009", "name": "AUTO NEJMA", "ticker": "AUTO NEJMA", "secteur": "Distribution", "cours": 4310.0, "cours_prec": 2068.0, "nb_titres": 1023264.0, "capi": 4410267840.0, "flottant": 220513392.0, "rnpg24": 205383000.0, "rnpg25": 324182000.0, "ca24": 2902480000.0, "ca25": 4210641000.0, "div25": 176.0, "dy24": 0.027842227378190254, "dy25": 0.04083526682134571, "poids_masi": 0.0007793267813214073, "poids24": 0.0005046163238624829, "poids": 0.0007793267813214073, "pe24_calc": 21.47, "ric": "NEJ"},
-{"isin": "MA0000011843", "name": "STOKVIS", "ticker": "STOKVIS", "secteur": "Distribution", "cours": 85.4, "cours_prec": 54.0, "nb_titres": 17695150.0, "capi": 1511165810.0, "flottant": 226674871.5, "rnpg24": 21000000.0, "rnpg25": 26400000.0, "ca24": 334396000.0, "ca25": 219400000.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.0008011023566883348, "poids24": 0.00021127830576347307, "poids": 0.0008011023566883348, "pe24_calc": 71.96, "ric": "SNA"},
-{"isin": "MA0000011942", "name": "ENNAKL", "ticker": "ENNAKL", "secteur": "Distribution", "cours": 54.0, "cours_prec": 33.99, "nb_titres": 30000000.0, "capi": 810000000.0, "flottant": 121500000.0, "rnpg24": 154227079.93, "rnpg25": 190257980.0, "ca24": 1898014910.0, "ca25": 1961980790.0, "div25": 3.19, "dy24": 0.04407407407407407, "dy25": 0.05907407407407407, "poids_masi": 0.0004293988817266527, "poids24": 0.00048203139732486957, "poids": 0.0004293988817266527, "pe24_calc": 5.25, "ric": "NKL"},
-{"isin": "MA0000011587", "name": "FENIE BROSSETTE", "ticker": "FENIE BROSSETTE", "secteur": "Distribution", "cours": 310.0, "cours_prec": 247.9, "nb_titres": 1438984.0, "capi": 446085040.0, "flottant": 156129764.0, "rnpg24": 16603000.0, "rnpg25": 14900000.0, "ca24": 698170000.0, "ca25": 757000000.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.0005517855643279522, "poids24": 0.0002659038905439181, "poids": 0.0005517855643279522, "pe24_calc": 26.87, "ric": "FBR"},
-{"isin": "MA0000011595", "name": "SRM", "ticker": "SRM", "secteur": "Distribution", "cours": 484.5, "cours_prec": 410.0, "nb_titres": 320000.0, "capi": 155040000.0, "flottant": 31008000.0, "rnpg24": 1921739.67, "rnpg25": 12066216.48, "ca24": 356466189.99, "ca25": 393652383.84, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.0001095868355932514, "poids24": 0.0001269773812444576, "poids": 0.0001095868355932514, "pe24_calc": 80.68, "ric": "SRM"},
-{"isin": "MA0000010928", "name": "WAA", "ticker": "WAA", "secteur": "Assurances", "cours": 5750.0, "cours_prec": 4505.0, "nb_titres": 3500000.0, "capi": 20125000000.0, "flottant": 5031250000.0, "rnpg24": 853761000.0, "rnpg25": 1026000000.0, "ca24": 13726000000.0, "ca25": 15226000000.0, "div25": 150.0, "dy24": 0.02434782608695652, "dy25": 0.02608695652173913, "poids_masi": 0.01778117797273433, "poids24": 0.01777750107379491, "poids": 0.01778117797273433, "pe24_calc": 23.57, "ric": "WAA"},
-{"isin": "MA0000011710", "name": "ATLANTASANAD", "ticker": "ATLANTASANAD", "secteur": "Assurances", "cours": 130.0, "cours_prec": 129.7, "nb_titres": 60283595.0, "capi": 7836867350.0, "flottant": 1567373470.0, "rnpg24": 453361000.0, "rnpg25": 467641000.0, "ca24": 5260000000.0, "ca25": 6050000000.0, "div25": 5.8, "dy24": 0.04461538461538461, "dy25": 0.04461538461538461, "poids_masi": 0.005539328520708009, "poids24": 0.005606435321119246, "poids": 0.005539328520708009, "pe24_calc": 17.29, "ric": "ATL"},
-{"isin": "MA0000012007", "name": "SANLAM", "ticker": "SANLAM", "secteur": "Assurances", "cours": 3115.0, "cours_prec": 2000.0, "nb_titres": 4116874.0, "capi": 12824062510.0, "flottant": 1282406251.0, "rnpg24": 690920000.0, "rnpg25": 676523000.0, "ca24": 6186016000.0, "ca25": 6396362000.0, "div25": 98.0, "dy24": 0.026003210272873195, "dy25": 0.03146067415730337, "poids_masi": 0.00453221242879563, "poids24": 0.0036618409147509082, "poids": 0.00453221242879563, "pe24_calc": 18.56, "ric": "SAH"},
-{"isin": "MA0000010944", "name": "AGMA", "ticker": "AGMA", "secteur": "Assurances", "cours": 7300.0, "cours_prec": 6999.0, "nb_titres": 200000.0, "capi": 1460000000.0, "flottant": 511000000.0, "rnpg24": 66626000.0, "rnpg25": 73800000.0, "ca24": 172249000.0, "ca25": 188100000.0, "div25": 310.0, "dy24": 0.0410958904109589, "dy25": 0.04246575342465753, "poids_masi": 0.0018059492062742347, "poids24": 0.0021653497082560333, "poids": 0.0018059492062742347, "pe24_calc": 21.91, "ric": "AGM"},
-{"isin": "MA0000012296", "name": "AFMA", "ticker": "AFMA", "secteur": "Assurances", "cours": 1240.0, "cours_prec": 1300.0, "nb_titres": 1000000.0, "capi": 1240000000.0, "flottant": 496000000.0, "rnpg24": 74000000.0, "rnpg25": 82000000.0, "ca24": 286224142.0, "ca25": 317000000.0, "div25": 62.0, "dy24": 0.0, "dy25": 0.05, "poids_masi": 0.0017529369986536603, "poids24": 0.0021557157573052444, "poids": 0.0017529369986536603, "pe24_calc": 16.76, "ric": "AFM"},
-{"isin": "MA0000010365", "name": "SBM", "ticker": "SBM", "secteur": "Boissons", "cours": 2409.0, "cours_prec": 1982.602, "nb_titres": 2829653.0, "capi": 6816634077.0, "flottant": 1363326815.4, "rnpg24": 215357000.0, "rnpg25": 343000000.0, "ca24": 2862632000.0, "ca25": 3080000000.0, "div25": 127.0, "dy24": 0.04151100041511, "dy25": 0.052718970527189705, "poids_masi": 0.004818197612845421, "poids24": 0.006332048697037614, "poids": 0.004818197612845421, "pe24_calc": 31.65, "ric": "SBM"},
-{"isin": "MA0000010415", "name": "OULMES", "ticker": "OULMES", "secteur": "Boissons", "cours": 1200.0, "cours_prec": 1218.0, "nb_titres": 1980000.0, "capi": 2376000000.0, "flottant": 356400000.0, "rnpg24": 57886000.0, "rnpg25": 112300000.0, "ca24": 2940457000.0, "ca25": 3251000000.0, "div25": 40.15, "dy24": 0.019166666666666665, "dy25": 0.03345833333333333, "poids_masi": 0.0012595700530648479, "poids24": 0.0018414200307423781, "poids": 0.0012595700530648479, "pe24_calc": 41.05, "ric": "OUL"},
-{"isin": "MA0000011058", "name": "MANAGEM", "ticker": "MANAGEM", "secteur": "Mines", "cours": 1720.0, "cours_prec": 495.1, "nb_titres": 118646760.0, "capi": 204072427200.0, "flottant": 30610864080.0, "rnpg24": 619900000.0, "rnpg25": 3002000000.0, "ca24": 8859400000.0, "ca25": 13694000000.0, "div25": 105.005959475566, "dy24": 0.002283425841354599, "dy25": 0.06104997643928256, "poids_masi": 0.10818329880360955, "poids24": 0.03776511348178174, "poids": 0.10818329880360955, "pe24_calc": 329.2, "ric": "MNG"},
-{"isin": "MA0000011793", "name": "CMT", "ticker": "CMT", "secteur": "Mines", "cours": 5449.0, "cours_prec": 1785.0, "nb_titres": 1681233.0, "capi": 9161038617.0, "flottant": 4580519308.5, "rnpg24": -12125978.0, "rnpg25": 196000000.0, "ca24": 586364041.0, "ca25": 690000000.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.016188229372816793, "poids24": 0.006434665988972917, "poids": 0.016188229372816793, "pe24_calc": null, "ric": "CMT"},
-{"isin": "MA0000010068", "name": "SMI", "ticker": "SMI", "secteur": "Mines", "cours": 12660.0, "cours_prec": 2384.0, "nb_titres": 1645090.0, "capi": 20826839400.0, "flottant": 3124025910.0, "rnpg24": 186719660.9, "rnpg25": 397000000.0, "ca24": 1052712641.87, "ca25": 1566000000.0, "div25": 150.0, "dy24": 0.00631911532385466, "dy25": 0.011848341232227487, "poids_masi": 0.011040767343531592, "poids24": 0.0024126140018129977, "poids": 0.011040767343531592, "pe24_calc": 111.54, "ric": "SMI"},
-{"isin": "MA0000010993", "name": "REBAB COMPANY", "ticker": "REBAB COMPANY", "secteur": "Mines", "cours": 99.99, "cours_prec": 84.61, "nb_titres": 176456.0, "capi": 17643835.439999998, "flottant": 3528767.088, "rnpg24": 591972.65, "rnpg25": 1054000.0, "ca24": 0.0, "ca25": 0.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 1.2471182234247049e-05, "poids24": 1.7167998197543157e-05, "poids": 1.2471182234247049e-05, "pe24_calc": 29.81, "ric": "REB"},
-{"isin": "MA0000011512", "name": "ADDOHA", "ticker": "ADDOHA", "secteur": "Immobilier", "cours": 32.32, "cours_prec": 39.25, "nb_titres": 402551254.0, "capi": 13010456529.28, "flottant": 4553659785.248, "rnpg24": 304000000.0, "rnpg25": 516000000.0, "ca24": 2594688796.0, "ca25": 2698476347.84, "div25": 0.5, "dy24": 0.01547029702970297, "dy25": 0.01547029702970297, "poids_masi": 0.016093303864601814, "poids24": 0.02525219099174766, "poids": 0.016093303864601814, "pe24_calc": 42.8, "ric": "ADH"},
-{"isin": "MA0000011819", "name": "ALLIANCES", "ticker": "ALLIANCES", "secteur": "Immobilier", "cours": 435.0, "cours_prec": 465.5, "nb_titres": 22078588.0, "capi": 9604185780.0, "flottant": 3841674312.0, "rnpg24": 305000000.0, "rnpg25": 402000000.0, "ca24": 2363364000.0, "ca25": 2432000000.0, "div25": 4.0, "dy24": 0.008275862068965517, "dy25": 0.009195402298850575, "poids_masi": 0.013577042415891421, "poids24": 0.01891802312986696, "poids": 0.013577042415891421, "pe24_calc": 31.49, "ric": "ADI"},
-{"isin": "MA0000012239", "name": "RDS", "ticker": "RDS", "secteur": "Immobilier", "cours": 174.5, "cours_prec": 105.0, "nb_titres": 26208850.0, "capi": 4573444325.0, "flottant": 2058049946.2500002, "rnpg24": -80000000.0, "rnpg25": 4000000.0, "ca24": 234000000.0, "ca25": 469000000.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.007273451402941133, "poids24": 0.004499906887899522, "poids": 0.007273451402941133, "pe24_calc": null, "ric": "RDS"},
-{"isin": "MA0000011611", "name": "HPS", "ticker": "HPS", "secteur": "Services informatiques", "cours": 625.5, "cours_prec": 586.9, "nb_titres": 7406190.0, "capi": 4632571845.0, "flottant": 3011171699.25, "rnpg24": 62000000.0, "rnpg25": 105777740.0, "ca24": 1455000000.0, "ca25": 1551000000.0, "div25": 8.0, "dy24": 0.011199446747330682, "dy25": 0.012789768185451638, "poids_masi": 0.010641923953455921, "poids24": 0.01297208289373468, "poids": 0.010641923953455921, "pe24_calc": 74.72, "ric": "HPS"},
-{"isin": "MA0000011637", "name": "DISWAY", "ticker": "DISWAY", "secteur": "Services informatiques", "cours": 809.9, "cours_prec": 775.0, "nb_titres": 1885762.0, "capi": 1527278643.8, "flottant": 534547525.3299999, "rnpg24": 78847540.18, "rnpg25": 85457931.0, "ca24": 1904636547.34, "ca25": 2076000000.0, "div25": 44.0, "dy24": 0.049388813433757256, "dy25": 0.05432769477713298, "poids_masi": 0.0018891696263905473, "poids24": 0.0020177437711858936, "poids": 0.0018891696263905473, "pe24_calc": 19.37, "ric": "DWY"},
-{"isin": "MA0000012163", "name": "MICRODATA", "ticker": "MICRODATA", "secteur": "Services informatiques", "cours": 762.0, "cours_prec": 820.0, "nb_titres": 1680000.0, "capi": 1280160000.0, "flottant": 576072000.0, "rnpg24": 67814205.42, "rnpg25": 69500000.0, "ca24": 900445777.78, "ca25": 979400000.0, "div25": 40.0, "dy24": 0.05249343832020997, "dy25": 0.05249343832020997, "poids_masi": 0.0020359232312266357, "poids24": 0.0023436254936721173, "poids": 0.0020359232312266357, "pe24_calc": 18.88, "ric": "MIC"},
-{"isin": "MA0000012106", "name": "S2M", "ticker": "S2M", "secteur": "Services informatiques", "cours": 587.0, "cours_prec": 444.8, "nb_titres": 812070.0, "capi": 476685090.0, "flottant": 143005527.0, "rnpg24": 29413481.0, "rnpg25": 32600000.0, "ca24": 312710114.0, "ca25": 366845580.91, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.0005054025792142439, "poids24": 0.0002904743520522461, "poids": 0.0005054025792142439, "pe24_calc": 16.21, "ric": "S2M"},
-{"isin": "MA0000012536", "name": "DISTY", "ticker": "DISTY", "secteur": "Services informatiques", "cours": 360.1, "cours_prec": 311.9, "nb_titres": 998110.0, "capi": 359419411.0, "flottant": 251593587.7, "rnpg24": 19364056.78, "rnpg25": 25800000.0, "ca24": 547834555.13, "ca25": 638300000.0, "div25": 19.5, "dy24": 0.04582060538739239, "dy25": 0.05415162454873646, "poids_masi": 0.0008891687671438395, "poids24": 0.0007775613313003496, "poids": 0.0008891687671438395, "pe24_calc": 18.56, "ric": "DYT"},
-{"isin": "MA0000011678", "name": "M2M Group", "ticker": "M2M Group", "secteur": "Services informatiques", "cours": 429.9, "cours_prec": 520.0, "nb_titres": 647777.0, "capi": 278479332.3, "flottant": 97467766.30499998, "rnpg24": 20329810.0, "rnpg25": 6545127.0, "ca24": 102625950.86, "ca25": 126682451.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.00034446543091161896, "poids24": 0.0005935261530750625, "poids": 0.00034446543091161896, "pe24_calc": 13.7, "ric": "M2M"},
-{"isin": "MA0000011579", "name": "INVOLYS", "ticker": "INVOLYS", "secteur": "Services informatiques", "cours": 146.75, "cours_prec": 97.5, "nb_titres": 382716.0, "capi": 56163573.0, "flottant": 19657250.55, "rnpg24": -123469.25, "rnpg25": 100000.0, "ca24": 37516821.87, "ca25": 37400000.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 6.947161649375002e-05, "poids24": 6.32268135184847e-05, "poids": 6.947161649375002e-05, "pe24_calc": null, "ric": "INV"},
-{"isin": "MA0000011132", "name": "IB MAROC", "ticker": "IB MAROC", "secteur": "Services informatiques", "cours": 64.5, "cours_prec": 39.39, "nb_titres": 417486.0, "capi": 26927847.0, "flottant": 12117531.15, "rnpg24": -11964719.93, "rnpg25": 0.0, "ca24": 480000.0, "ca25": 0.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 4.2825138478171845e-05, "poids24": 2.9567964729019713e-05, "poids": 4.2825138478171845e-05, "pe24_calc": null, "ric": "IBC"},
-{"isin": "MA0000012585", "name": "AKDITAL", "ticker": "AKDITAL", "secteur": "Santé", "cours": 1213.0, "cours_prec": 1281.0, "nb_titres": 14159207.0, "capi": 17175118091.0, "flottant": 8587559045.5, "rnpg24": 314609432.0, "rnpg25": 494000000.0, "ca24": 2954038793.0, "ca25": 4413000000.0, "div25": 10.0, "dy24": 0.008244023083264633, "dy25": 0.008244023083264633, "poids_masi": 0.03034969753826585, "poids24": 0.0356216847910324, "poids": 0.03034969753826585, "pe24_calc": 54.59, "ric": "AKT"},
-{"isin": "MA0000012759", "name": "VICENNE", "ticker": "VICENNE", "secteur": "Santé", "cours": 410.0, "cours_prec": null, "nb_titres": 10258850.0, "capi": 4206128500.0, "flottant": 1682451400.0, "rnpg24": 91217000.0, "rnpg25": 144000000.0, "ca24": 836623000.0, "ca25": 1083655282.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.005946030861888405, "poids24": 0.0, "poids": 0.005946030861888405, "pe24_calc": 46.11, "ric": "VCN"},
-{"isin": "MA0000010357", "name": "EQDOM", "ticker": "EQDOM", "secteur": "Societé de financement", "cours": 1340.0, "cours_prec": 1041.0, "nb_titres": 1670250.0, "capi": 2238135000.0, "flottant": 447627000.0, "rnpg24": -6963000.0, "rnpg25": 95498000.0, "ca24": 539602000.0, "ca25": 589865000.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.0015819796973716572, "poids24": 0.001942085041148692, "poids": 0.0015819796973716572, "pe24_calc": null, "ric": "EQD"},
-{"isin": "MA0000012767", "name": "CASH PLUS", "ticker": "CASH PLUS", "secteur": "Societé de financement", "cours": 270.0, "cours_prec": null, "nb_titres": 24553090.0, "capi": 6629334300.0, "flottant": 1027546816.5, "rnpg24": 196468000.0, "rnpg25": 242000000.0, "ca24": 760000000.0, "ca25": 863000000.0, "div25": 9.73, "dy24": 0.0, "dy25": 0.03603703703703704, "poids_masi": 0.003631501678410551, "poids24": 0.0, "poids": 0.003631501678410551, "pe24_calc": 33.74, "ric": "CAP"},
-{"isin": "MA0000011744", "name": "SALAFIN", "ticker": "SALAFIN", "secteur": "Societé de financement", "cours": 460.5, "cours_prec": 660.0, "nb_titres": 3124119.0, "capi": 1438656799.5, "flottant": 431597039.85, "rnpg24": 93146000.0, "rnpg25": 96000000.0, "ca24": 378646000.0, "ca25": 384000000.0, "div25": 29.5, "dy24": 0.06406080347448426, "dy25": 0.06406080347448426, "poids_masi": 0.0015253274589969016, "poids24": 0.0016628184098434339, "poids": 0.0015253274589969016, "pe24_calc": 15.45, "ric": "SLF"},
-{"isin": "MA0000011215", "name": "MAGHREBAIL", "ticker": "MAGHREBAIL", "secteur": "Societé de financement", "cours": 895.0, "cours_prec": 930.0, "nb_titres": 1384182.0, "capi": 1238842890.0, "flottant": 185826433.5, "rnpg24": 135634000.0, "rnpg25": 148199000.0, "ca24": 377618000.0, "ca25": 438374000.0, "div25": 53.0, "dy24": 0.05921787709497207, "dy25": 0.05921787709497207, "poids_masi": 0.0006567379649395241, "poids24": 0.0008912099513961701, "poids": 0.0006567379649395241, "pe24_calc": 9.13, "ric": "MAB"},
-{"isin": "MA0000010035", "name": "MAROC LEASING", "ticker": "MAROC LEASING", "secteur": "Societé de financement", "cours": 370.0, "cours_prec": 393.0, "nb_titres": 2776768.0, "capi": 1027404160.0, "flottant": 102740416.0, "rnpg24": 105304000.0, "rnpg25": 107295000.0, "ca24": 379187000.0, "ca25": 387199000.0, "div25": 14.0, "dy24": 0.03783783783783784, "dy25": 0.03783783783783784, "poids_masi": 0.0003630997509344123, "poids24": 0.0005164844662549951, "poids": 0.0003630997509344123, "pe24_calc": 9.76, "ric": "MLE"},
-{"isin": "MA0000012502", "name": "SOTHEMA", "ticker": "SOTHEMA", "secteur": "indus Pharmaceutique", "cours": 364.0, "cours_prec": 212.0, "nb_titres": 7606728.0, "capi": 2768848992.0, "flottant": 415327348.8, "rnpg24": 345000000.0, "rnpg25": 418000000.0, "ca24": 3082000000.0, "ca25": 3508000000.0, "div25": 33.0, "dy24": 0.07692307692307693, "dy25": 0.09065934065934066, "poids_masi": 0.0014678279763392216, "poids24": 0.0006885685087242091, "poids": 0.0014678279763392216, "pe24_calc": 8.03, "ric": "SOT"},
-{"isin": "MA0000011660", "name": "PROMOPHARM", "ticker": "PROMOPHARM", "secteur": "indus Pharmaceutique", "cours": 1405.0, "cours_prec": 940.0, "nb_titres": 1000000.0, "capi": 1405000000.0, "flottant": 140500000.0, "rnpg24": 55159969.69, "rnpg25": 59915000.0, "ca24": 898713862.91, "ca25": 979734000.0, "div25": 30.0, "dy24": 0.0, "dy25": 0.021352313167259787, "poids_masi": 0.0004965476780460469, "poids24": 0.0004769282648905408, "poids": 0.0004965476780460469, "pe24_calc": 25.47, "ric": "PRO"},
-{"isin": "MA0000011850", "name": "DHO", "ticker": "DHO", "secteur": "Holding", "cours": 61.0, "cours_prec": 75.0, "nb_titres": 87600000.0, "capi": 5343600000.0, "flottant": 1603080000.0, "rnpg24": 295382791.69, "rnpg25": 307000000.0, "ca24": 3137670704.52, "ca25": 3050000000.0, "div25": 2.0, "dy24": 0.036885245901639344, "dy25": 0.03278688524590164, "poids_masi": 0.005665520652826028, "poids24": 0.006774451230115304, "poids": 0.005665520652826028, "pe24_calc": 18.09, "ric": "DHO"},
-{"isin": "MA0000010571", "name": "ZELLIDJA", "ticker": "ZELLIDJA", "secteur": "Holding", "cours": 217.4, "cours_prec": 141.05, "nb_titres": 572849.0, "capi": 124537372.60000001, "flottant": 12453737.260000002, "rnpg24": 6315000.0, "rnpg25": 21588000.0, "ca24": 698178000.0, "ca25": 0.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 4.4013340351946896e-05, "poids24": 2.4908362384434038e-05, "poids": 4.4013340351946896e-05, "pe24_calc": 19.72, "ric": "ZDJ"},
-{"isin": "MA0000011728", "name": "SNEP", "ticker": "SNEP", "secteur": "Chimie", "cours": 385.0, "cours_prec": 628.0, "nb_titres": 2400000.0, "capi": 924000000.0, "flottant": 369600000.0, "rnpg24": -74600000.0, "rnpg25": -192500000.0, "ca24": 633333000.0, "ca25": 745700000.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.0013062207957709533, "poids24": 0.002747106805769515, "poids": 0.0013062207957709533, "pe24_calc": null, "ric": "SNP"},
-{"isin": "MA0000010985", "name": "MAGHREB OXYGENE", "ticker": "MAGHREB OXYGENE", "secteur": "Chimie", "cours": 387.8, "cours_prec": 422.0, "nb_titres": 812500.0, "capi": 315087500.0, "flottant": 47263125.0, "rnpg24": 12428000.0, "rnpg25": 15450000.0, "ca24": 330365000.0, "ca25": 330365000.0, "div25": 4.0, "dy24": 0.010314595152140279, "dy25": 0.010314595152140279, "poids_masi": 0.00016703483968647737, "poids24": 0.00020146344149473113, "poids": 0.00016703483968647737, "pe24_calc": 25.35, "ric": "MOX"},
-{"isin": "MA0000011462", "name": "RISMA", "ticker": "RISMA", "secteur": "Loisirs et Hôtels", "cours": 330.0, "cours_prec": 280.0, "nb_titres": 14326947.0, "capi": 4727892510.0, "flottant": 709183876.5, "rnpg24": 183024000.0, "rnpg25": 270000000.0, "ca24": 1263775000.0, "ca25": 1630269750.0, "div25": 9.0, "dy24": 0.021212121212121213, "dy25": 0.02727272727272727, "poids_masi": 0.0025063601934787864, "poids24": 0.002387082688978031, "poids": 0.0025063601934787864, "pe24_calc": 25.83, "ric": "RIS"},
-{"isin": "MA0000012460", "name": "ARADEI", "ticker": "ARADEI", "secteur": "Placement immobilier", "cours": 448.0, "cours_prec": 475.0, "nb_titres": 12568130.0, "capi": 5630522240.0, "flottant": 3378313344.0, "rnpg24": 297453000.0, "rnpg25": 321673000.0, "ca24": 605747000.0, "ca25": 647000000.0, "div25": 23.0, "dy24": 0.049107142857142856, "dy25": 0.05133928571428571, "poids_masi": 0.011939456559965665, "poids24": 0.017622643515427132, "poids": 0.011939456559965665, "pe24_calc": 18.93, "ric": "ARD"},
-{"isin": "MA0000012387", "name": "IMMORENTE", "ticker": "IMMORENTE", "secteur": "Placement immobilier", "cours": 90.0, "cours_prec": 90.0, "nb_titres": 9007000.0, "capi": 810630000.0, "flottant": 567440999.9999999, "rnpg24": 47112000.0, "rnpg25": 41486000.0, "ca24": 78675000.0, "ca25": 85302000.0, "div25": 2.2, "dy24": 0.024444444444444446, "dy25": 0.024444444444444446, "poids_masi": 0.0020054200069617566, "poids24": 0.002706286515577534, "poids": 0.0020054200069617566, "pe24_calc": 17.21, "ric": "IMO"},
-{"isin": "MA0000011991", "name": "BALIMA", "ticker": "BALIMA", "secteur": "Placement immobilier", "cours": 229.9, "cours_prec": 220.0, "nb_titres": 1744000.0, "capi": 400945600.0, "flottant": 80189120.0, "rnpg24": 14280669.0, "rnpg25": 13650000.0, "ca24": 63153000.0, "ca25": 70119000.0, "div25": 5.5, "dy24": 0.023923444976076555, "dy25": 0.023923444976076555, "poids_masi": 0.000283400151890077, "poids24": 0.00035848980730068347, "poids": 0.000283400151890077, "pe24_calc": 28.08, "ric": "BAL"},
-{"isin": "MA0000010340", "name": "CTM", "ticker": "CTM", "secteur": "Transport", "cours": 886.0, "cours_prec": 915.0, "nb_titres": 1225978.0, "capi": 1086216508.0, "flottant": 217243301.60000002, "rnpg24": 46622000.0, "rnpg25": 56200000.0, "ca24": 1301509000.0, "ca25": 1827400000.0, "div25": 26.0, "dy24": 0.028216704288939052, "dy25": 0.029345372460496615, "poids_masi": 0.0007677698005732176, "poids24": 0.0010086136415761076, "poids": 0.0007677698005732176, "pe24_calc": 23.3, "ric": "CTM"},
-{"isin": "MA0000011447", "name": "MED PAPER", "ticker": "MED PAPER", "secteur": "Sylviculture et Papier", "cours": 25.85, "cours_prec": 21.4, "nb_titres": 4714199.0, "capi": 121862044.15, "flottant": 30465511.0375, "rnpg24": 7985231.64, "rnpg25": 6700000.0, "ca24": 101768000.0, "ca25": 78719000.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.0001076695997591234, "poids24": 0.00011505853080150313, "poids": 0.0001076695997591234, "pe24_calc": 15.26, "ric": "MDP"},
-{"isin": "MA0000012056", "name": "STROC", "ticker": "STROC", "secteur": "Biens d'équipement", "cours": 228.7, "cours_prec": 56.0, "nb_titres": 1248515.0, "capi": 285535380.5, "flottant": 85660614.15, "rnpg24": -12577347.63, "rnpg25": 500000.0, "ca24": 117669378.45, "ca25": 174000000.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.00030273721748171425, "poids24": 7.204744049146542e-05, "poids": 0.00030273721748171425, "pe24_calc": null, "ric": "STR"},
-{"isin": "MA0000011777", "name": "DLM", "ticker": "DLM", "secteur": "Biens d'équipement", "cours": 40.0, "cours_prec": 40.0, "nb_titres": 1750000.0, "capi": 70000000.0, "flottant": 14000000.0, "rnpg24": -401713000.0, "rnpg25": 0.0, "ca24": 133071000.0, "ca25": 0.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 4.947806044586944e-05, "poids24": 6.676995708467571e-05, "poids": 4.947806044586944e-05, "pe24_calc": null, "ric": "DLM"},
-{"isin": "MA0000012858", "name": "T2S Technology", "ticker": "T2S Technology", "secteur": "Santé", "cours": 231.5, "cours_prec": null, "nb_titres": 21785174.0, "capi": 5043267781.0, "flottant": 1139778518.506, "rnpg24": 182532410.0, "rnpg25": 244000000.0, "ca24": 2327559142.0, "ca25": 2925000000.0, "div25": 0.0, "dy24": 0.0, "dy25": 0.0, "poids_masi": 0.004028145030967385, "poids24": 0.0, "poids": 0.004028145030967385, "pe24_calc": 27.63, "ric": "T2S"},
-{"isin": "MA0000012718", "name": "CMGP", "ticker": "CMGP", "secteur": "Industrie agricole", "cours": 378.8, "cours_prec": 266.05, "nb_titres": 17000900.0, "capi": 6439940920.0, "flottant": 3219970460.0, "rnpg24": 182532410.0, "rnpg25": 244000000.0, "ca24": 2327559142.0, "ca25": 2925000000.0, "div25": 6.5, "dy24": 0.01663146779303062, "dy25": 0.017159450897571277, "poids_masi": 0.01137984950384243, "poids24": 0.010785946004742846, "poids": 0.01137984950384243, "pe24_calc": 35.28, "ric": "CMG"}].map(d => ({
-  ...d,
-  pe24: d.pe24_calc,
-  pe25: d.rnpg25 ? parseFloat((d.capi / d.rnpg25).toFixed(2)) : null,
-  facteur_flottant: d.facteur_flottant != null ? d.facteur_flottant : (d.capi > 0 ? d.flottant / d.capi : 0)
-}));
+const RAW_DATA = [
+{"isin": "MA0000012445", "name": "ATW", "ticker": "ATW", "secteur": "Banque", "ric": "ATW", "div24": 19.0, "div25": 22.0, "cours_prec": 660.0, "rnpg25": 10644000000.0, "rnpg_s1_25": 5878666000.0, "rnpg_s1_26": 5944287000.0, "rnpg26": 11888574000.0, "ca24": 34507117000.0, "ca25": 34921384000.0, "cours": 691.1, "nb_titres": 215140839.0, "capi": 148683833832.9, "flottant": 44605150149.87, "facteur_flottant": 0.30000000000000004, "poids": 0.16623146614741907, "poids_masi": 0.16623146614741907},
+{"isin": "MA0000012437", "name": "BOA", "ticker": "BOA", "secteur": "Banque", "ric": "BOA", "div24": 5.0, "div25": 5.0, "cours_prec": 218.449016, "rnpg25": 3813000000.0, "rnpg_s1_25": 2251235000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 18716574000.0, "ca25": 20348000000.0, "cours": 194.8, "nb_titres": 220281881.0, "capi": 42910910418.8, "flottant": 10727727604.7, "facteur_flottant": 0.25, "poids": 0.03997937193726986, "poids_masi": 0.03997937193726986},
+{"isin": "MA0000011884", "name": "BCP", "ticker": "BCP", "secteur": "Banque", "ric": "BCP", "div24": 10.5, "div25": 10.5, "cours_prec": 265.1, "rnpg25": 4501845756.0, "rnpg_s1_25": 2915647000.0, "rnpg_s1_26": 3200000000.0, "rnpg26": 6400000000.0, "ca24": 25601207000.0, "ca25": 26983672178.0, "cours": 250.95, "nb_titres": 203312473.0, "capi": 51021265099.35, "flottant": 7653189764.902499, "facteur_flottant": 0.15, "poids": 0.028521391611723377, "poids_masi": 0.028521391611723377},
+{"isin": "MA0000011454", "name": "CIH", "ticker": "CIH", "secteur": "Banque", "ric": "CIH", "div24": 14.0, "div25": 14.0, "cours_prec": 395.6783116, "rnpg25": 1089400000.0, "rnpg_s1_25": 615437000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 4739507000.0, "ca25": 5422500000.0, "cours": 330.0, "nb_titres": 35605624.0, "capi": 11749855920.0, "flottant": 2937463980.0, "facteur_flottant": 0.25, "poids": 0.01094714270683956, "poids_masi": 0.01094714270683956},
+{"isin": "MA0000010381", "name": "CDM", "ticker": "CDM", "secteur": "Banque", "ric": "CDM", "div24": 41.7, "div25": 48.0, "cours_prec": 1065.74782, "rnpg25": 863551000.0, "rnpg_s1_25": 445147000.0, "rnpg_s1_26": 531692000.0, "rnpg26": 1063384000.0, "ca24": 3303182000.0, "ca25": 3568401000.0, "cours": 960.0, "nb_titres": 10881214.0, "capi": 10445965440.0, "flottant": 2611491360.0, "facteur_flottant": 0.25, "poids": 0.009732329924807631, "poids_masi": 0.009732329924807631},
+{"isin": "MA0000010811", "name": "BMCI", "ticker": "BMCI", "secteur": "Banque", "ric": "BCI", "div24": 18.0, "div25": 18.0, "cours_prec": 566.1, "rnpg25": 419113194.0, "rnpg_s1_25": 222773000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 3788722000.0, "ca25": 3940000000.0, "cours": 565.0, "nb_titres": 13279286.0, "capi": 7502796590.0, "flottant": 1500559318.0, "facteur_flottant": 0.2, "poids": 0.0055921832935033455, "poids_masi": 0.0055921832935033455},
+{"isin": "MA0000012627", "name": "CFG", "ticker": "CFG", "secteur": "Banque", "ric": "CFG", "div24": 3.3, "div25": 4.0, "cours_prec": 229.0, "rnpg25": 370445000.0, "rnpg_s1_25": 180747000.0, "rnpg_s1_26": 199562000.0, "rnpg26": 399124000.0, "ca24": 941408000.0, "ca25": 1247229000.0, "cours": 205.9, "nb_titres": 35007960.0, "capi": 7208138964.0, "flottant": 6126918119.4, "facteur_flottant": 0.85, "poids": 0.022833385349696395, "poids_masi": 0.022833385349696395},
+{"isin": "MA0000011488", "name": "IAM", "ticker": "IAM", "secteur": "Télecommunication", "ric": "IAM", "div24": 1.43, "div25": 4.0, "cours_prec": 114.45, "rnpg25": 5649000000.0, "rnpg_s1_25": 4117000000.0, "rnpg_s1_26": 2482000000.0, "rnpg26": 4964000000.0, "ca24": 36699000000.0, "ca25": 36681000000.0, "cours": 96.3, "nb_titres": 879095340.0, "capi": 84656881242.0, "flottant": 16931376248.400002, "facteur_flottant": 0.2, "poids": 0.06309871143149426, "poids_masi": 0.06309871143149426},
+{"isin": "MA0000012320", "name": "LHM", "ticker": "LHM", "secteur": "Bâtiment et matériaux", "ric": "LHM", "div24": 70.0, "div25": 96.0, "cours_prec": 1900.0, "rnpg25": 2166000000.0, "rnpg_s1_25": 917501000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 8154838000.0, "ca25": 8936000000.0, "cours": 1665.0, "nb_titres": 23431240.0, "capi": 39013014600.0, "flottant": 13654555110.0, "facteur_flottant": 0.35, "poids": 0.050886875347344804, "poids_masi": 0.050886875347344804},
+{"isin": "MA0000010506", "name": "CIMAR", "ticker": "CIMAR", "secteur": "Bâtiment et matériaux", "ric": "CMA", "div24": 60.0, "div25": 65.0, "cours_prec": 1865.0, "rnpg25": 1402000000.0, "rnpg_s1_25": 600998000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 4990000000.0, "ca25": 5349000000.0, "cours": 1555.0, "nb_titres": 14436004.0, "capi": 22447986220.0, "flottant": 7856795177.0, "facteur_flottant": 0.35, "poids": 0.029280174533758124, "poids_masi": 0.029280174533758124},
+{"isin": "MA0000012528", "name": "TGCC", "ticker": "TGCC", "secteur": "Bâtiment et matériaux", "ric": "TGC", "div24": 11.5, "div25": 15.0, "cours_prec": 732.0, "rnpg25": 952000000.0, "rnpg_s1_25": 416623000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 11745450000.0, "ca25": 12363640000.0, "cours": 675.0, "nb_titres": 34674332.0, "capi": 23405174100.0, "flottant": 9362069640.0, "facteur_flottant": 0.4, "poids": 0.03488992991173634, "poids_masi": 0.03488992991173634},
+{"isin": "MA0000012783", "name": "SGTM", "ticker": "SGTM", "secteur": "Bâtiment et matériaux", "ric": "GTM", "div24": 0.0, "div25": 12.0, "cours_prec": null, "rnpg25": 1342000000.0, "rnpg_s1_25": 548000000.0, "rnpg_s1_26": 793000000.0, "rnpg26": 1586000000.0, "ca24": 11098839000.0, "ca25": 15200000000.0, "cours": 639.9, "nb_titres": 60000000.0, "capi": 38394000000.0, "flottant": 7678800000.0, "facteur_flottant": 0.2, "poids": 0.02861683410915548, "poids_masi": 0.02861683410915548},
+{"isin": "MA0000010019", "name": "SONASID", "ticker": "SONASID", "secteur": "Bâtiment et matériaux", "ric": "SID", "div24": 39.0, "div25": 52.0, "cours_prec": 2100.0, "rnpg25": 272000000.0, "rnpg_s1_25": 96747000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 5494500000.0, "ca25": 6386000000.0, "cours": 1899.0, "nb_titres": 3900000.0, "capi": 7406100000.0, "flottant": 2592135000.0, "facteur_flottant": 0.35, "poids": 0.009660193947431336, "poids_masi": 0.009660193947431336},
+{"isin": "MA0000012080", "name": "JET", "ticker": "JET", "secteur": "Bâtiment et matériaux", "ric": "JET", "div24": 15.0, "div25": 20.0, "cours_prec": 2150.0, "rnpg25": 225000000.0, "rnpg_s1_25": 126044808.95, "rnpg_s1_26": null, "rnpg26": null, "ca24": 3117729584.6, "ca25": 3648773527.48, "cours": 1900.0, "nb_titres": 3029522.0, "capi": 5756091800.0, "flottant": 2302436720.0, "facteur_flottant": 0.4, "poids": 0.008580565929971879, "poids_masi": 0.008580565929971879},
+{"isin": "MA0000011934", "name": "COLORADO", "ticker": "COLORADO", "secteur": "Bâtiment et matériaux", "ric": "COL", "div24": 2.6, "div25": 3.5, "cours_prec": 59.47, "rnpg25": 65500000.0, "rnpg_s1_25": 27375352.92, "rnpg_s1_26": null, "rnpg26": null, "ca24": 605017873.46, "ca25": 624000000.0, "cours": 79.59, "nb_titres": 16117611.0, "capi": 1282800659.49, "flottant": 448980230.8215, "facteur_flottant": 0.35, "poids": 0.0016732292524494975, "poids_masi": 0.0016732292524494975},
+{"isin": "MA0000010936", "name": "ALM", "ticker": "ALM", "secteur": "Bâtiment et matériaux", "ric": "ALM", "div24": 100.0, "div25": 110.0, "cours_prec": 1823.0, "rnpg25": 66300000.0, "rnpg_s1_25": 31321020.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 1243449540.0, "ca25": 1304909750.0, "cours": 1847.0, "nb_titres": 465954.0, "capi": 860617038.0, "flottant": 258185111.4, "facteur_flottant": 0.3, "poids": 0.000962186865446115, "poids_masi": 0.000962186865446115},
+{"isin": "MA0000012114", "name": "AFRIC INDUSTRIES", "ticker": "AFRIC INDUSTRIES", "secteur": "Bâtiment et matériaux", "ric": "AFI", "div24": 22.0, "div25": 20.0, "cours_prec": 331.6, "rnpg25": 7530000.0, "rnpg_s1_25": 3171207.69, "rnpg_s1_26": 3952247.24, "rnpg26": 7904494.48, "ca24": 43110076.58, "ca25": 43952000.0, "cours": 333.0, "nb_titres": 291500.0, "capi": 97069500.0, "flottant": 48534750.0, "facteur_flottant": 0.5, "poids": 0.00018087603392188023, "poids_masi": 0.00018087603392188023},
+{"isin": "MA0000012247", "name": "COSUMAR", "ticker": "COSUMAR", "secteur": "Agroalimentaire", "ric": "CSR", "div24": 10.0, "div25": 10.0, "cours_prec": 237.0, "rnpg25": 704000000.0, "rnpg_s1_25": 387400000.0, "rnpg_s1_26": 333000000.0, "rnpg26": 666000000.0, "ca24": 10238600000.0, "ca25": 10487000000.0, "cours": 179.9, "nb_titres": 94487143.0, "capi": 16998237025.7, "flottant": 5099471107.71, "facteur_flottant": 0.3, "poids": 0.019004365100506383, "poids_masi": 0.019004365100506383},
+{"isin": "MA0000012031", "name": "LESIEUR", "ticker": "LESIEUR", "secteur": "Agroalimentaire", "ric": "LES", "div24": 3.0, "div25": 0.0, "cours_prec": 284.9, "rnpg25": 8000000.0, "rnpg_s1_25": 12000000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 5455000000.0, "ca25": 5378000000.0, "cours": 309.9, "nb_titres": 27631510.0, "capi": 8563004948.999999, "flottant": 2140751237.2499998, "facteur_flottant": 0.25, "poids": 0.00797800737424501, "poids_masi": 0.00797800737424501},
+{"isin": "MA0000012395", "name": "MUTANDIS", "ticker": "MUTANDIS", "secteur": "Agroalimentaire", "ric": "MUT", "div24": 10.5, "div25": 10.5, "cours_prec": 300.0, "rnpg25": 126160000.0, "rnpg_s1_25": 67903000.0, "rnpg_s1_26": -4694000.0, "rnpg26": -9388000.0, "ca24": 2116550000.0, "ca25": 2021823000.0, "cours": 226.0, "nb_titres": 9246737.0, "capi": 2089762562.0, "flottant": 1671810049.6000001, "facteur_flottant": 0.8, "poids": 0.006230388973722743, "poids_masi": 0.006230388973722743},
+{"isin": "MA0000012023", "name": "UNIMER", "ticker": "UNIMER", "secteur": "Agroalimentaire", "ric": "UMR", "div24": 0.0, "div25": 0.0, "cours_prec": 170.0, "rnpg25": 11000000.0, "rnpg_s1_25": -64251000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 1259642000.0, "ca25": 1085000000.0, "cours": 168.9, "nb_titres": 11413880.0, "capi": 1927804332.0, "flottant": 385560866.40000004, "facteur_flottant": 0.2, "poids": 0.001436882241072962, "poids_masi": 0.001436882241072962},
+{"isin": "MA0000011421", "name": "DARI", "ticker": "DARI", "secteur": "Agroalimentaire", "ric": "DRI", "div24": 140.0, "div25": 140.0, "cours_prec": 3550.0, "rnpg25": 52395028.0, "rnpg_s1_25": 25925727.83, "rnpg_s1_26": null, "rnpg26": null, "ca24": 858916922.0, "ca25": 818399882.0, "cours": 4200.0, "nb_titres": 298375.0, "capi": 1253175000.0, "flottant": 375952500.0, "facteur_flottant": 0.3, "poids": 0.0014010744290022237, "poids_masi": 0.0014010744290022237},
+{"isin": "MA0000011868", "name": "CARTIER SAADA", "ticker": "CARTIER SAADA", "secteur": "Agroalimentaire", "ric": "CRS", "div24": 0.0, "div25": 0.0, "cours_prec": 32.0, "rnpg25": 0.0, "rnpg_s1_25": null, "rnpg_s1_26": null, "rnpg26": null, "ca24": 296694031.26, "ca25": 0.0, "cours": 18.01, "nb_titres": 5265000.0, "capi": 94822650.00000001, "flottant": 23705662.500000004, "facteur_flottant": 0.25, "poids": 8.834466468850967e-05, "poids_masi": 8.834466468850967e-05},
+{"isin": "MA0000012312", "name": "MARSA", "ticker": "MARSA", "secteur": "Services de transport", "ric": "MSA", "div24": 9.5, "div25": 11.0, "cours_prec": 743.0, "rnpg25": 1589000000.0, "rnpg_s1_25": 773120000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 5008150000.0, "ca25": 5785000000.0, "cours": 829.9, "nb_titres": 73395600.0, "capi": 60911008440.0, "flottant": 21318852954.0, "facteur_flottant": 0.35, "poids": 0.07944966379930422, "poids_masi": 0.07944966379930422},
+{"isin": "MA0000012205", "name": "TAQA", "ticker": "TAQA", "secteur": "Electricité", "ric": "TQM", "div24": 37.0, "div25": 38.0, "cours_prec": 2399.0, "rnpg25": 981000000.0, "rnpg_s1_25": 436856000.0, "rnpg_s1_26": 462301000.0, "rnpg26": 924602000.0, "ca24": 10878079000.0, "ca25": 10638000000.0, "cours": 1700.0, "nb_titres": 23588542.0, "capi": 40100521400.0, "flottant": 6015078210.0, "facteur_flottant": 0.15, "poids": 0.022416587915972015, "poids_masi": 0.022416587915972015},
+{"isin": "MA0000012262", "name": "TOTAL", "ticker": "TOTAL", "secteur": "Pétrole et Gaz", "ric": "TMA", "div24": 113.0, "div25": 113.0, "cours_prec": 1873.0, "rnpg25": 851000000.0, "rnpg_s1_25": 324273000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 16751842000.0, "ca25": 15126000000.0, "cours": 1450.0, "nb_titres": 8960000.0, "capi": 12992000000.0, "flottant": 1948800000.0, "facteur_flottant": 0.15, "poids": 0.007262656445267777, "poids_masi": 0.007262656445267777},
+{"isin": "MA0000010951", "name": "AFRIQUIA GAZ", "ticker": "AFRIQUIA GAZ", "secteur": "Pétrole et Gaz", "ric": "GAZ", "div24": 175.0, "div25": 175.0, "cours_prec": 4100.0, "rnpg25": 750500000.0, "rnpg_s1_25": 368290000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 8989425000.0, "ca25": 8989425000.0, "cours": 3630.0, "nb_titres": 3437500.0, "capi": 12478125000.0, "flottant": 3743437500.0, "facteur_flottant": 0.3, "poids": 0.01395079047969627, "poids_masi": 0.01395079047969627},
+{"isin": "MA0000011801", "name": "LABEL VIE", "ticker": "LABEL VIE", "secteur": "Distribution", "ric": "LBV", "div24": 110.57, "div25": 120.0, "cours_prec": 4298.0, "rnpg25": 578790600.36, "rnpg_s1_25": 269585441.14, "rnpg_s1_26": 370170586.5, "rnpg26": 740341173.0, "ca24": 18534397910.76, "ca25": 18534397910.0, "cours": 4000.0, "nb_titres": 2893957.0, "capi": 11575828000.0, "flottant": 5209122600.0, "facteur_flottant": 0.45, "poids": 0.01941300688889575, "poids_masi": 0.01941300688889575},
+{"isin": "MA0000010969", "name": "AUTO HALL", "ticker": "AUTO HALL", "secteur": "Distribution", "ric": "ATH", "div24": 2.0, "div25": 2.0, "cours_prec": 76.5, "rnpg25": 100000000.0, "rnpg_s1_25": 47305263.28, "rnpg_s1_26": null, "rnpg26": null, "ca24": 5022141140.61, "ca25": 5911000000.0, "cours": 62.0, "nb_titres": 50294528.0, "capi": 3118260736.0, "flottant": 623652147.2, "facteur_flottant": 0.2, "poids": 0.0023241847734334813, "poids_masi": 0.0023241847734334813},
+{"isin": "MA0000011009", "name": "AUTO NEJMA", "ticker": "AUTO NEJMA", "secteur": "Distribution", "ric": "NEJ", "div24": 120.0, "div25": 176.0, "cours_prec": 2068.0, "rnpg25": 324182000.0, "rnpg_s1_25": 146966000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 2902480000.0, "ca25": 4210641000.0, "cours": 5621.0, "nb_titres": 1023264.0, "capi": 5751766944.0, "flottant": 287588347.2, "facteur_flottant": 0.049999999999999996, "poids": 0.0010717648621592708, "poids_masi": 0.0010717648621592708},
+{"isin": "MA0000011843", "name": "STOKVIS", "ticker": "STOKVIS", "secteur": "Distribution", "ric": "SNA", "div24": 0.0, "div25": 0.0, "cours_prec": 56.3, "rnpg25": 26400000.0, "rnpg_s1_25": null, "rnpg_s1_26": null, "rnpg26": null, "ca24": 334396000.0, "ca25": 219400000.0, "cours": 64.15, "nb_titres": 17695150.0, "capi": 1135143872.5, "flottant": 170271580.875, "facteur_flottant": 0.15, "poids": 0.0006345566473151437, "poids_masi": 0.0006345566473151437},
+{"isin": "MA0000011942", "name": "ENNAKL", "ticker": "ENNAKL", "secteur": "Distribution", "ric": "NKL", "div24": 2.38, "div25": 3.19, "cours_prec": 34.6, "rnpg25": 190257980.0, "rnpg_s1_25": 118476989.17999999, "rnpg_s1_26": null, "rnpg26": null, "ca24": 1898014910.0, "ca25": 1961980790.0, "cours": 48.1, "nb_titres": 30000000.0, "capi": 721500000.0, "flottant": 108225000.0, "facteur_flottant": 0.15, "poids": 0.0004033256331019628, "poids_masi": 0.0004033256331019628},
+{"isin": "MA0000011587", "name": "FENIE BROSSETTE", "ticker": "FENIE BROSSETTE", "secteur": "Distribution", "ric": "FBR", "div24": 0.0, "div25": 0.0, "cours_prec": 289.8, "rnpg25": 14900000.0, "rnpg_s1_25": 8171000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 698170000.0, "ca25": 757000000.0, "cours": 343.9, "nb_titres": 1438984.0, "capi": 494866597.59999996, "flottant": 173203309.15999997, "facteur_flottant": 0.35, "poids": 0.0006454824146205773, "poids_masi": 0.0006454824146205773},
+{"isin": "MA0000011595", "name": "SRM", "ticker": "SRM", "secteur": "Distribution", "ric": "SRM", "div24": 0.0, "div25": 0.0, "cours_prec": 475.5, "rnpg25": 12066216.48, "rnpg_s1_25": 816977.66, "rnpg_s1_26": null, "rnpg26": null, "ca24": 356466189.99, "ca25": 393652383.84, "cours": 462.5, "nb_titres": 320000.0, "capi": 148000000.0, "flottant": 29600000.0, "facteur_flottant": 0.2, "poids": 0.00011031128426720351, "poids_masi": 0.00011031128426720351},
+{"isin": "MA0000010928", "name": "WAA", "ticker": "WAA", "secteur": "Assurances", "ric": "WAA", "div24": 140.0, "div25": 150.0, "cours_prec": 4899.0, "rnpg25": 1026000000.0, "rnpg_s1_25": 590000000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 13726000000.0, "ca25": 15226000000.0, "cours": 5151.0, "nb_titres": 3500000.0, "capi": 18028500000.0, "flottant": 4507125000.0, "facteur_flottant": 0.25, "poids": 0.016796849564284445, "poids_masi": 0.016796849564284445},
+{"isin": "MA0000011710", "name": "ATLANTASANAD", "ticker": "ATLANTASANAD", "secteur": "Assurances", "ric": "ATL", "div24": 5.8, "div25": 5.8, "cours_prec": 131.0, "rnpg25": 467641000.0, "rnpg_s1_25": 335961000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 5260000000.0, "ca25": 6050000000.0, "cours": 124.0, "nb_titres": 60283595.0, "capi": 7475165780.0, "flottant": 1495033156.0, "facteur_flottant": 0.2, "poids": 0.005571588765554405, "poids_masi": 0.005571588765554405},
+{"isin": "MA0000012007", "name": "SANLAM", "ticker": "SANLAM", "secteur": "Assurances", "ric": "SAH", "div24": 81.0, "div25": 98.0, "cours_prec": 2000.0, "rnpg25": 676523000.0, "rnpg_s1_25": null, "rnpg_s1_26": null, "rnpg26": null, "ca24": 6186016000.0, "ca25": 6396362000.0, "cours": 2999.0, "nb_titres": 4116874.0, "capi": 12346505126.0, "flottant": 1234650512.6000001, "facteur_flottant": 0.1, "poids": 0.004601212286015782, "poids_masi": 0.004601212286015782},
+{"isin": "MA0000010944", "name": "AGMA", "ticker": "AGMA", "secteur": "Assurances", "ric": "AGM", "div24": 300.0, "div25": 310.0, "cours_prec": 6604.0, "rnpg25": 73800000.0, "rnpg_s1_25": 38454000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 172249000.0, "ca25": 188100000.0, "cours": 6690.0, "nb_titres": 200000.0, "capi": 1338000000.0, "flottant": 468300000.0, "facteur_flottant": 0.35, "poids": 0.001745228865619304, "poids_masi": 0.001745228865619304},
+{"isin": "MA0000012296", "name": "AFMA", "ticker": "AFMA", "secteur": "Assurances", "ric": "AFM", "div24": 0.0, "div25": 62.0, "cours_prec": 1300.0, "rnpg25": 82000000.0, "rnpg_s1_25": 51378000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 286224142.0, "ca25": 317000000.0, "cours": 1250.0, "nb_titres": 1000000.0, "capi": 1250000000.0, "flottant": 500000000.0, "facteur_flottant": 0.4, "poids": 0.0018633662882973565, "poids_masi": 0.0018633662882973565},
+{"isin": "MA0000010365", "name": "SBM", "ticker": "SBM", "secteur": "Boissons", "ric": "SBM", "div24": 100.0, "div25": 127.0, "cours_prec": 2053.975672, "rnpg25": 343000000.0, "rnpg_s1_25": 87342000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 2862632000.0, "ca25": 3080000000.0, "cours": 2017.0, "nb_titres": 2829653.0, "capi": 5707410101.0, "flottant": 1141482020.2, "facteur_flottant": 0.2, "poids": 0.004253998230276485, "poids_masi": 0.004253998230276485},
+{"isin": "MA0000010415", "name": "OULMES", "ticker": "OULMES", "secteur": "Boissons", "ric": "OUL", "div24": 23.0, "div25": 40.15, "cours_prec": 1223.0, "rnpg25": 112300000.0, "rnpg_s1_25": 31799000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 2940457000.0, "ca25": 3251000000.0, "cours": 1160.0, "nb_titres": 1980000.0, "capi": 2296800000.0, "flottant": 344520000.0, "facteur_flottant": 0.15, "poids": 0.0012839339072884105, "poids_masi": 0.0012839339072884105},
+{"isin": "MA0000011058", "name": "MANAGEM", "ticker": "MANAGEM", "secteur": "Mines", "ric": "MNG", "div24": 3.93, "div25": 105.005959475566, "cours_prec": 501.6, "rnpg25": 3002000000.0, "rnpg_s1_25": 380500000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 8859400000.0, "ca25": 13694000000.0, "cours": 1655.0, "nb_titres": 118646760.0, "capi": 196360387800.0, "flottant": 29454058170.0, "facteur_flottant": 0.15, "poids": 0.10976739809505466, "poids_masi": 0.10976739809505466},
+{"isin": "MA0000011793", "name": "CMT", "ticker": "CMT", "secteur": "Mines", "ric": "CMT", "div24": 0.0, "div25": 0.0, "cours_prec": 1837.0, "rnpg25": 196000000.0, "rnpg_s1_25": 74751639.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 586364041.0, "ca25": 690000000.0, "cours": 3567.0, "nb_titres": 1681233.0, "capi": 5996958111.0, "flottant": 2998479055.5, "facteur_flottant": 0.5, "poids": 0.011174529576368795, "poids_masi": 0.011174529576368795},
+{"isin": "MA0000010068", "name": "SMI", "ticker": "SMI", "secteur": "Mines", "ric": "SMI", "div24": 80.0, "div25": 150.0, "cours_prec": 2388.0, "rnpg25": 397000000.0, "rnpg_s1_25": 107733681.32, "rnpg_s1_26": null, "rnpg26": null, "ca24": 1052712641.87, "ca25": 1566000000.0, "cours": 6688.0, "nb_titres": 1645090.0, "capi": 11002361920.0, "flottant": 1650354288.0, "facteur_flottant": 0.15, "poids": 0.006150429088012373, "poids_masi": 0.006150429088012373},
+{"isin": "MA0000010993", "name": "REBAB COMPANY", "ticker": "REBAB COMPANY", "secteur": "Mines", "ric": "REB", "div24": 0.0, "div25": 0.0, "cours_prec": 86.0, "rnpg25": 1054000.0, "rnpg_s1_25": 399197.7, "rnpg_s1_26": null, "rnpg26": null, "ca24": 0.0, "ca25": 0.0, "cours": 99.1, "nb_titres": 176456.0, "capi": 17486789.599999998, "flottant": 3497357.92, "facteur_flottant": 0.2, "poids": 1.3033717692475525e-05, "poids_masi": 1.3033717692475525e-05},
+{"isin": "MA0000011512", "name": "ADDOHA", "ticker": "ADDOHA", "secteur": "Immobilier", "ric": "ADH", "div24": 0.5, "div25": 0.5, "cours_prec": 38.1, "rnpg25": 516000000.0, "rnpg_s1_25": 263168232.00000003, "rnpg_s1_26": null, "rnpg26": null, "ca24": 2594688796.0, "ca25": 2698476347.84, "cours": 34.1, "nb_titres": 402551254.0, "capi": 13726997761.400002, "flottant": 4804449216.49, "facteur_flottant": 0.3499999999999999, "poids": 0.017904897407688226, "poids_masi": 0.017904897407688226},
+{"isin": "MA0000011819", "name": "ALLIANCES", "ticker": "ALLIANCES", "secteur": "Immobilier", "ric": "ADI", "div24": 3.6, "div25": 4.0, "cours_prec": 480.0, "rnpg25": 402000000.0, "rnpg_s1_25": 210272000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 2363364000.0, "ca25": 2432000000.0, "cours": 390.0, "nb_titres": 22078588.0, "capi": 8610649320.0, "flottant": 3444259728.0, "facteur_flottant": 0.4, "poids": 0.012835834930590845, "poids_masi": 0.012835834930590845},
+{"isin": "MA0000012239", "name": "RDS", "ticker": "RDS", "secteur": "Immobilier", "ric": "RDS", "div24": 0.0, "div25": 0.0, "cours_prec": 102.0, "rnpg25": 4000000.0, "rnpg_s1_25": 6465000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 234000000.0, "ca25": 469000000.0, "cours": 172.0, "nb_titres": 26208850.0, "capi": 4507922200.0, "flottant": 2028564990.0000002, "facteur_flottant": 0.45000000000000007, "poids": 0.007559919231972529, "poids_masi": 0.007559919231972529},
+{"isin": "MA0000011611", "name": "HPS", "ticker": "HPS", "secteur": "Services informatiques", "ric": "HPS", "div24": 7.01, "div25": 8.0, "cours_prec": 569.0, "rnpg25": 105777740.0, "rnpg_s1_25": -47254113.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 1455000000.0, "ca25": 1551000000.0, "cours": 638.0, "nb_titres": 7406190.0, "capi": 4725149220.0, "flottant": 3071346993.0, "facteur_flottant": 0.65, "poids": 0.011446088892839313, "poids_masi": 0.011446088892839313},
+{"isin": "MA0000011637", "name": "DISWAY", "ticker": "DISWAY", "secteur": "Services informatiques", "ric": "DWY", "div24": 40.0, "div25": 44.0, "cours_prec": 777.0, "rnpg25": 85457931.0, "rnpg_s1_25": 50207736.3, "rnpg_s1_26": null, "rnpg26": null, "ca24": 1904636547.34, "ca25": 2076000000.0, "cours": 749.9, "nb_titres": 1885762.0, "capi": 1414132923.8, "flottant": 494946523.3299999, "facteur_flottant": 0.35, "poids": 0.0018445333321662058, "poids_masi": 0.0018445333321662058},
+{"isin": "MA0000012163", "name": "MICRODATA", "ticker": "MICRODATA", "secteur": "Services informatiques", "ric": "MIC", "div24": 40.0, "div25": 40.0, "cours_prec": 809.0, "rnpg25": 69500000.0, "rnpg_s1_25": 48961122.62, "rnpg_s1_26": null, "rnpg26": null, "ca24": 900445777.78, "ca25": 979400000.0, "cours": 768.0, "nb_titres": 1680000.0, "capi": 1290240000.0, "flottant": 580608000.0, "facteur_flottant": 0.45, "poids": 0.002163770747831503, "poids_masi": 0.002163770747831503},
+{"isin": "MA0000012106", "name": "S2M", "ticker": "S2M", "secteur": "Services informatiques", "ric": "S2M", "div24": 0.0, "div25": 0.0, "cours_prec": 639.9, "rnpg25": 32600000.0, "rnpg_s1_25": 11049645.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 312710114.0, "ca25": 366845580.91, "cours": 518.0, "nb_titres": 812070.0, "capi": 420652260.0, "flottant": 126195678.0, "facteur_flottant": 0.3, "poids": 0.0004702975442280567, "poids_masi": 0.0004702975442280567},
+{"isin": "MA0000012536", "name": "DISTY", "ticker": "DISTY", "secteur": "Services informatiques", "ric": "DYT", "div24": 16.5, "div25": 19.5, "cours_prec": 331.0, "rnpg25": 25800000.0, "rnpg_s1_25": 12544865.86, "rnpg_s1_26": null, "rnpg26": null, "ca24": 547834555.13, "ca25": 638300000.0, "cours": 352.0, "nb_titres": 998110.0, "capi": 351334720.0, "flottant": 245934303.99999997, "facteur_flottant": 0.7, "poids": 0.0009165313824189473, "poids_masi": 0.0009165313824189473},
+{"isin": "MA0000011678", "name": "M2M Group", "ticker": "M2M Group", "secteur": "Services informatiques", "ric": "M2M", "div24": 0.0, "div25": 0.0, "cours_prec": 547.8, "rnpg25": 6545127.0, "rnpg_s1_25": -454167.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 102625950.86, "ca25": 126682451.0, "cours": 391.0, "nb_titres": 647777.0, "capi": 253280807.0, "flottant": 88648282.45, "facteur_flottant": 0.35000000000000003, "poids": 0.0003303684420655844, "poids_masi": 0.0003303684420655844},
+{"isin": "MA0000011579", "name": "INVOLYS", "ticker": "INVOLYS", "secteur": "Services informatiques", "ric": "INV", "div24": 0.0, "div25": 0.0, "cours_prec": 98.98, "rnpg25": 100000.0, "rnpg_s1_25": 2817949.81, "rnpg_s1_26": null, "rnpg26": null, "ca24": 37516821.87, "ca25": 37400000.0, "cours": 130.0, "nb_titres": 382716.0, "capi": 49753080.0, "flottant": 17413578.0, "facteur_flottant": 0.35, "poids": 6.4895748407673e-05, "poids_masi": 6.4895748407673e-05},
+{"isin": "MA0000011132", "name": "IB MAROC", "ticker": "IB MAROC", "secteur": "Services informatiques", "ric": "IBC", "div24": 0.0, "div25": 0.0, "cours_prec": 39.79, "rnpg25": 0.0, "rnpg_s1_25": null, "rnpg_s1_26": null, "rnpg26": null, "ca24": 480000.0, "ca25": 0.0, "cours": 58.34, "nb_titres": 417486.0, "capi": 24356133.240000002, "flottant": 10960259.958000002, "facteur_flottant": 0.45000000000000007, "poids": 4.084595783342521e-05, "poids_masi": 4.084595783342521e-05},
+{"isin": "MA0000012585", "name": "AKDITAL", "ticker": "AKDITAL", "secteur": "Santé", "ric": "AKT", "div24": 10.0, "div25": 10.0, "cours_prec": 1449.0, "rnpg25": 494000000.0, "rnpg_s1_25": 194130198.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 2954038793.0, "ca25": 4413000000.0, "cours": 1139.0, "nb_titres": 14159207.0, "capi": 16127336773.0, "flottant": 8063668386.5, "facteur_flottant": 0.5, "poids": 0.030051135662826477, "poids_masi": 0.030051135662826477},
+{"isin": "MA0000012759", "name": "VICENNE", "ticker": "VICENNE", "secteur": "Santé", "ric": "VCN", "div24": 0.0, "div25": 0.0, "cours_prec": null, "rnpg25": 144000000.0, "rnpg_s1_25": 82598400.0, "rnpg_s1_26": 93759082.0, "rnpg26": 187518164.0, "ca24": 836623000.0, "ca25": 1083655282.0, "cours": 332.6, "nb_titres": 10258850.0, "capi": 3412093510.0, "flottant": 1364837404.0000002, "facteur_flottant": 0.4000000000000001, "poids": 0.00508638401524176, "poids_masi": 0.00508638401524176},
+{"isin": "MA0000012858", "name": "T2S Technology", "ticker": "T2S Technology", "secteur": "Santé", "ric": "T2S", "div24": 0.0, "div25": 0.0, "cours_prec": null, "rnpg25": 244000000.0, "rnpg_s1_25": 96626621.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 2327559142.0, "ca25": 2925000000.0, "cours": 223.0, "nb_titres": 21785174.0, "capi": 4858093802.0, "flottant": 1097929199.252, "facteur_flottant": 0.226, "poids": 0.004091688513646976, "poids_masi": 0.004091688513646976},
+{"isin": "MA0000010357", "name": "EQDOM", "ticker": "EQDOM", "secteur": "Societé de financement", "ric": "EQD", "div24": 0.0, "div25": 0.0, "cours_prec": 1045.0, "rnpg25": 95498000.0, "rnpg_s1_25": 62916000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 539602000.0, "ca25": 589865000.0, "cours": 1480.0, "nb_titres": 1670250.0, "capi": 2471970000.0, "flottant": 494394000.0, "facteur_flottant": 0.2, "poids": 0.0018424742254729664, "poids_masi": 0.0018424742254729664},
+{"isin": "MA0000012767", "name": "CASH PLUS", "ticker": "CASH PLUS", "secteur": "Societé de financement", "ric": "CAP", "div24": 0.0, "div25": 9.73, "cours_prec": null, "rnpg25": 242000000.0, "rnpg_s1_25": 0.0, "rnpg_s1_26": 151031000.0, "rnpg26": 302062000.0, "ca24": 760000000.0, "ca25": 863000000.0, "cours": 230.0, "nb_titres": 24553090.0, "capi": 5647210700.0, "flottant": 875317658.5, "facteur_flottant": 0.155, "poids": 0.003262074832800556, "poids_masi": 0.003262074832800556},
+{"isin": "MA0000011744", "name": "SALAFIN", "ticker": "SALAFIN", "secteur": "Societé de financement", "ric": "SLF", "div24": 29.5, "div25": 29.5, "cours_prec": 680.0, "rnpg25": 96000000.0, "rnpg_s1_25": 46727000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 378646000.0, "ca25": 384000000.0, "cours": 425.0, "nb_titres": 3124119.0, "capi": 1327750575.0, "flottant": 398325172.5, "facteur_flottant": 0.3, "poids": 0.0014844513964334585, "poids_masi": 0.0014844513964334585},
+{"isin": "MA0000011215", "name": "MAGHREBAIL", "ticker": "MAGHREBAIL", "secteur": "Societé de financement", "ric": "MAB", "div24": 53.0, "div25": 53.0, "cours_prec": 972.0, "rnpg25": 148199000.0, "rnpg_s1_25": 71497000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 377618000.0, "ca25": 438374000.0, "cours": 920.0, "nb_titres": 1384182.0, "capi": 1273447440.0, "flottant": 191017116.0, "facteur_flottant": 0.15, "poids": 0.0007118697088843712, "poids_masi": 0.0007118697088843712},
+{"isin": "MA0000010035", "name": "MAROC LEASING", "ticker": "MAROC LEASING", "secteur": "Societé de financement", "ric": "MLE", "div24": 14.0, "div25": 14.0, "cours_prec": 373.1, "rnpg25": 107295000.0, "rnpg_s1_25": 52719000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 379187000.0, "ca25": 387199000.0, "cours": 374.15, "nb_titres": 2776768.0, "capi": 1038927747.1999999, "flottant": 103892774.72, "facteur_flottant": 0.1, "poids": 0.00038718058802183965, "poids_masi": 0.00038718058802183965},
+{"isin": "MA0000012502", "name": "SOTHEMA", "ticker": "SOTHEMA", "secteur": "indus Pharmaceutique", "ric": "SOT", "div24": 28.0, "div25": 33.0, "cours_prec": 240.0, "rnpg25": 418000000.0, "rnpg_s1_25": 193702000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 3082000000.0, "ca25": 3508000000.0, "cours": 360.0, "nb_titres": 7606728.0, "capi": 2738422080.0, "flottant": 410763312.0, "facteur_flottant": 0.15, "poids": 0.001530805016100338, "poids_masi": 0.001530805016100338},
+{"isin": "MA0000011660", "name": "PROMOPHARM", "ticker": "PROMOPHARM", "secteur": "indus Pharmaceutique", "ric": "PRO", "div24": 0.0, "div25": 30.0, "cours_prec": 958.0, "rnpg25": 59915000.0, "rnpg_s1_25": 26252367.23, "rnpg_s1_26": null, "rnpg26": null, "ca24": 898713862.91, "ca25": 979734000.0, "cours": 1480.0, "nb_titres": 1000000.0, "capi": 1480000000.0, "flottant": 148000000.0, "facteur_flottant": 0.1, "poids": 0.0005515564213360175, "poids_masi": 0.0005515564213360175},
+{"isin": "MA0000011850", "name": "DHO", "ticker": "DHO", "secteur": "Holding", "ric": "DHO", "div24": 2.25, "div25": 2.0, "cours_prec": 82.5, "rnpg25": 307000000.0, "rnpg_s1_25": 125444115.75, "rnpg_s1_26": 125379902.14, "rnpg26": 250759804.28, "ca24": 3137670704.52, "ca25": 3050000000.0, "cours": 50.0, "nb_titres": 87600000.0, "capi": 4380000000.0, "flottant": 1314000000.0, "facteur_flottant": 0.3, "poids": 0.004896926605645452, "poids_masi": 0.004896926605645452},
+{"isin": "MA0000010571", "name": "ZELLIDJA", "ticker": "ZELLIDJA", "secteur": "Holding", "ric": "ZDJ", "div24": 0.0, "div25": 0.0, "cours_prec": 150.0, "rnpg25": 21588000.0, "rnpg_s1_25": 6387000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 698178000.0, "ca25": 0.0, "cours": 265.0, "nb_titres": 572849.0, "capi": 151804985.0, "flottant": 15180498.5, "facteur_flottant": 0.1, "poids": 5.657365828889718e-05, "poids_masi": 5.657365828889718e-05},
+{"isin": "MA0000011728", "name": "SNEP", "ticker": "SNEP", "secteur": "Chimie", "ric": "SNP", "div24": 0.0, "div25": 0.0, "cours_prec": 699.9, "rnpg25": -192500000.0, "rnpg_s1_25": -91075000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 633333000.0, "ca25": 745700000.0, "cours": 305.0, "nb_titres": 2400000.0, "capi": 732000000.0, "flottant": 292800000.0, "facteur_flottant": 0.4, "poids": 0.001091187298426932, "poids_masi": 0.001091187298426932},
+{"isin": "MA0000010985", "name": "MAGHREB OXYGENE", "ticker": "MAGHREB OXYGENE", "secteur": "Chimie", "ric": "MOX", "div24": 4.0, "div25": 4.0, "cours_prec": 442.1, "rnpg25": 15450000.0, "rnpg_s1_25": 9279000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 330365000.0, "ca25": 330365000.0, "cours": 389.95, "nb_titres": 812500.0, "capi": 316834375.0, "flottant": 47525156.24999999, "facteur_flottant": 0.14999999999999997, "poids": 0.0001771135480046288, "poids_masi": 0.0001771135480046288},
+{"isin": "MA0000011462", "name": "RISMA", "ticker": "RISMA", "secteur": "Loisirs et Hôtels", "ric": "RIS", "div24": 7.0, "div25": 9.0, "cours_prec": 302.0, "rnpg25": 270000000.0, "rnpg_s1_25": 117000000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 1263775000.0, "ca25": 1630269750.0, "cours": 322.2, "nb_titres": 14326947.0, "capi": 4616142323.4, "flottant": 692421348.51, "facteur_flottant": 0.15000000000000002, "poids": 0.002580469196221858, "poids_masi": 0.002580469196221858},
+{"isin": "MA0000012460", "name": "ARADEI", "ticker": "ARADEI", "secteur": "Placement immobilier", "ric": "ARD", "div24": 22.0, "div25": 23.0, "cours_prec": 475.1, "rnpg25": 321673000.0, "rnpg_s1_25": 98627000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 605747000.0, "ca25": 647000000.0, "cours": 438.0, "nb_titres": 12568130.0, "capi": 5504840940.0, "flottant": 3302904564.0, "facteur_flottant": 0.6, "poids": 0.012309042036042156, "poids_masi": 0.012309042036042156},
+{"isin": "MA0000012387", "name": "IMMORENTE", "ticker": "IMMORENTE", "secteur": "Placement immobilier", "ric": "IMO", "div24": 2.2, "div25": 2.2, "cours_prec": 90.1, "rnpg25": 41486000.0, "rnpg_s1_25": 21659000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 78675000.0, "ca25": 85302000.0, "cours": 92.5, "nb_titres": 9007000.0, "capi": 833147500.0, "flottant": 583203250.0, "facteur_flottant": 0.7, "poids": 0.0021734425505509107, "poids_masi": 0.0021734425505509107},
+{"isin": "MA0000011991", "name": "BALIMA", "ticker": "BALIMA", "secteur": "Placement immobilier", "ric": "BAL", "div24": 5.5, "div25": 5.5, "cours_prec": 216.0, "rnpg25": 13650000.0, "rnpg_s1_25": 6529119.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 63153000.0, "ca25": 70119000.0, "cours": 191.0, "nb_titres": 1744000.0, "capi": 333104000.0, "flottant": 66620800.00000001, "facteur_flottant": 0.2, "poids": 0.0002482779056388011, "poids_masi": 0.0002482779056388011},
+{"isin": "MA0000010340", "name": "CTM", "ticker": "CTM", "secteur": "Transport", "ric": "CTM", "div24": 25.0, "div25": 26.0, "cours_prec": 909.0, "rnpg25": 56200000.0, "rnpg_s1_25": 12402000.0, "rnpg_s1_26": null, "rnpg26": null, "ca24": 1301509000.0, "ca25": 1827400000.0, "cours": 850.0, "nb_titres": 1225978.0, "capi": 1042081300.0, "flottant": 208416260.0, "facteur_flottant": 0.2, "poids": 0.0007767116656340336, "poids_masi": 0.0007767116656340336},
+{"isin": "MA0000011447", "name": "MED PAPER", "ticker": "MED PAPER", "secteur": "Sylviculture et Papier", "ric": "MDP", "div24": 0.0, "div25": 0.0, "cours_prec": 22.15, "rnpg25": 6700000.0, "rnpg_s1_25": 1535182.18, "rnpg_s1_26": null, "rnpg26": null, "ca24": 101768000.0, "ca25": 78719000.0, "cours": 24.23, "nb_titres": 4714199.0, "capi": 114225041.77, "flottant": 28556260.4425, "facteur_flottant": 0.25, "poids": 0.0001064215460567877, "poids_masi": 0.0001064215460567877},
+{"isin": "MA0000012056", "name": "STROC", "ticker": "STROC", "secteur": "Biens d'équipement", "ric": "STR", "div24": 0.0, "div25": 0.0, "cours_prec": 59.69, "rnpg25": 500000.0, "rnpg_s1_25": 15418690.12, "rnpg_s1_26": null, "rnpg26": null, "ca24": 117669378.45, "ca25": 174000000.0, "cours": 175.0, "nb_titres": 1248515.0, "capi": 218490125.0, "flottant": 65547037.5, "facteur_flottant": 0.3, "poids": 0.00024427627995052525, "poids_masi": 0.00024427627995052525},
+{"isin": "MA0000011777", "name": "DLM", "ticker": "DLM", "secteur": "Biens d'équipement", "ric": "DLM", "div24": 0.0, "div25": 0.0, "cours_prec": 40.0, "rnpg25": 0.0, "rnpg_s1_25": null, "rnpg_s1_26": null, "rnpg26": null, "ca24": 133071000.0, "ca25": 0.0, "cours": 40.0, "nb_titres": 1750000.0, "capi": 70000000.0, "flottant": 14000000.0, "facteur_flottant": 0.2, "poids": 5.217425607232598e-05, "poids_masi": 5.217425607232598e-05},
+{"isin": "MA0000012718", "name": "CMGP", "ticker": "CMGP", "secteur": "Industrie agricole", "ric": "CMG", "div24": 6.3, "div25": 6.5, "cours_prec": 310.0, "rnpg25": 1493902439.02439, "rnpg_s1_25": null, "rnpg_s1_26": null, "rnpg26": null, "ca24": null, "ca25": null, "cours": 378.8, "nb_titres": 17000900.0, "capi": 6439940920.0, "flottant": 3219970460.0, "facteur_flottant": 0.5, "poids": 0.011999968808954663, "poids_masi": 0.011999968808954663}
+];
+
+// Date des données intégrées : un snapshot localStorage antérieur est ignoré
+const DATA_VERSION = '2026-09-23';
+
+// Recalcul global des ratios (PE, DY, poids) à partir de cours / capi / flottant
+function recalcRatios() {
+  const totalFlot = RAW_DATA.reduce((s, d) => s + (d.flottant || 0), 0);
+  RAW_DATA.forEach(d => {
+    if (d.facteur_flottant == null) d.facteur_flottant = d.capi > 0 ? d.flottant / d.capi : 0;
+    d.pe25 = (d.capi > 0 && d.rnpg25 > 0) ? d.capi / d.rnpg25 : null;
+    d.pe26 = (d.capi > 0 && d.rnpg26 > 0) ? d.capi / d.rnpg26 : null;
+    d.dy24 = (d.div24 != null && d.cours > 0) ? d.div24 / d.cours : null;
+    d.dy25 = (d.div25 != null && d.cours > 0) ? d.div25 / d.cours : null;
+    if (totalFlot > 0) { d.poids = (d.flottant || 0) / totalFlot; d.poids_masi = d.poids; }
+  });
+}
+recalcRatios();
 
 let filteredData = [...RAW_DATA];
 
@@ -1125,9 +1147,17 @@ function fmtCours(n) {
   return n.toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 }
 
+// Variation RNPG 2026e (S1 2026 × 2) vs RNPG 2025 — uniquement pour les valeurs ayant publié le S1 2026
 function varRNPG(d) {
-  if (!d.rnpg24 || !d.rnpg25) return null;
-  return ((d.rnpg25 - d.rnpg24) / Math.abs(d.rnpg24)) * 100;
+  if (d.rnpg26 == null || !d.rnpg25) return null;
+  return ((d.rnpg26 - d.rnpg25) / Math.abs(d.rnpg25)) * 100;
+}
+function isPublished(d) { return d.rnpg26 != null; }
+function fmtPE(pe) { return pe ? pe.toFixed(1) + 'x' : '—'; }
+function weightedDY(data, field) {
+  const v = data.filter(d => d[field] != null && d.flottant > 0);
+  const tf = v.reduce((s, d) => s + d.flottant, 0);
+  return tf > 0 ? v.reduce((s, d) => s + d[field] * d.flottant / tf, 0) : null;
 }
 
 function getPeClass(pe) {
@@ -1149,15 +1179,8 @@ function calcPEHarmonique(data, rnpgField) {
   }, 0);
   return sommeprod > 0 ? 1 / sommeprod : null;
 }
-function calcPE24Harmonique(data) {
-  // PE 2024 harmonique : 1/SOMMEPROD(poids_2024, 1/pe24_calc)
-  const valid = data.filter(d => d.poids24 > 0 && d.pe24 && d.pe24 > 0);
-  const totalPoids = valid.reduce((s, d) => s + d.poids24, 0);
-  if (!totalPoids) return null;
-  const sp = valid.reduce((s, d) => s + (d.poids24 / totalPoids) * (1 / d.pe24), 0);
-  return sp > 0 ? 1 / sp : null;
-}
 function calcPE25Harmonique(data) { return calcPEHarmonique(data, 'rnpg25'); }
+function calcPE26Harmonique(data) { return calcPEHarmonique(data, 'rnpg26'); }
 
 let excludedTickers = new Set();
 let excludedSectors = new Set();
@@ -1260,32 +1283,34 @@ function buildKPIs() {
   const isFiltered = excludedTickers.size > 0 || excludedSectors.size > 0;
 
   const totalCapi = activeData.reduce((s,d) => s + d.capi, 0);
-  const totalRNPG25 = activeData.reduce((s,d) => s + (d.rnpg25||0), 0);
-  const totalRNPG24 = activeData.reduce((s,d) => s + (d.rnpg24||0), 0);
-  const pe25Global = calcPE25Harmonique(activeData);
-  const varRNPG = ((totalRNPG25 - totalRNPG24) / totalRNPG24) * 100;
-  const pe24Global = calcPE24Harmonique(activeData);
+  const mrds = v => (v/1e9).toLocaleString('fr-FR',{minimumFractionDigits:1,maximumFractionDigits:1});
 
-  // DY 2025 moyen pondéré par flottant
-  const validDY = activeData.filter(d => d.dy25 != null && d.flottant > 0);
-  const totalFlotDY = validDY.reduce((s,d) => s + d.flottant, 0);
-  const dy25Global = totalFlotDY > 0 ? validDY.reduce((s,d) => s + d.dy25 * (d.flottant / totalFlotDY), 0) : null;
-  // DY 2024 pour comparaison
-  const validDY24 = activeData.filter(d => d.dy24 != null && d.flottant > 0);
-  const totalFlotDY24 = validDY24.reduce((s,d) => s + d.flottant, 0);
-  const dy24Global = totalFlotDY24 > 0 ? validDY24.reduce((s,d) => s + d.dy24 * (d.flottant / totalFlotDY24), 0) : null;
+  // Périmètre constant : valeurs ayant publié leur RNPG S1 2026
+  const pub = activeData.filter(isPublished);
+  const totalRNPG26 = pub.reduce((s,d) => s + d.rnpg26, 0);
+  const totalRNPG25pub = pub.reduce((s,d) => s + (d.rnpg25||0), 0);
+  const varRNPGpub = totalRNPG25pub ? ((totalRNPG26 - totalRNPG25pub) / Math.abs(totalRNPG25pub)) * 100 : null;
+  const flotAll = activeData.reduce((s,d) => s + (d.flottant||0), 0);
+  const flotPub = pub.reduce((s,d) => s + (d.flottant||0), 0);
+  const covFlot = flotAll > 0 ? flotPub / flotAll * 100 : 0;
 
-  const vsPEStr = pe24Global ? 'PE 2024 : ' + pe24Global.toFixed(1) + 'x' : '';
-  const vsDYStr = dy24Global != null ? 'DY 2024 : ' + (dy24Global*100).toFixed(1) + '%' : '';
-  const vsRNPGStr = totalRNPG24 ? 'RNPG 2024 : ' + (totalRNPG24/1e9).toLocaleString('fr-FR',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' Mrds' : '';
+  const pe26Global = calcPE26Harmonique(pub);
+  const pe25Pub = calcPE25Harmonique(pub);
+  const pe25All = calcPE25Harmonique(activeData);
+
+  const dy25Global = weightedDY(activeData, 'dy25');
+  const dy24Global = weightedDY(activeData, 'dy24');
+
+  const varStr = varRNPGpub != null ? `${varRNPGpub >= 0 ? '+' : ''}${varRNPGpub.toFixed(1)}% vs 2025 · périmètre constant` : '—';
+  const covStr = `${pub.length}/${activeData.length} valeurs publiées · ${covFlot.toFixed(0)}% du flottant`;
 
   const totalExcl = excludedTickers.size + excludedSectors.size;
   const filteredNote = isFiltered ? `hors ${totalExcl} exclusion(s)` : null;
   const kpiCards = [
-    { label: "Capitalisation totale", value: (totalCapi/1e9).toLocaleString('fr-FR',{minimumFractionDigits:1,maximumFractionDigits:1}) + " Mrds MAD", sub: `${activeData.length} valeurs · Part MASI : ${(PART_MASI*100).toFixed(1)}%`, extra: filteredNote },
-    { label: "RNPG 2025 total", value: (totalRNPG25/1e9).toLocaleString('fr-FR',{minimumFractionDigits:1,maximumFractionDigits:1}) + " Mrds MAD", sub: `+${varRNPG.toFixed(1)}% vs 2024`, extra: vsRNPGStr },
-    { label: "PE 2025 (moy. harmonique)", value: pe25Global ? pe25Global.toFixed(1) + "x" : "—", sub: "Pondéré · RNPG 2025", extra: vsPEStr },
-    { label: "DY 2025 (moy. pondérée)", value: dy25Global != null ? (dy25Global*100).toFixed(1) + "%" : "—", sub: "Pondéré · capi flottante", extra: vsDYStr },
+    { label: "Capitalisation totale", value: mrds(totalCapi) + " Mrds MAD", sub: `${activeData.length} valeurs · Part MASI : ${(PART_MASI*100).toFixed(1)}%`, extra: filteredNote },
+    { label: "RNPG 2026e (S1 × 2)", value: pub.length ? mrds(totalRNPG26) + " Mrds MAD" : "—", sub: varStr, extra: `RNPG 2025 (même périmètre) : ${mrds(totalRNPG25pub)} Mrds<br>${covStr}` },
+    { label: "PE 2026e (moy. harmonique)", value: fmtPE(pe26Global), sub: "Pondéré · valeurs publiées", extra: `PE 2025 même périmètre : ${fmtPE(pe25Pub)}<br>PE 2025 univers : ${fmtPE(pe25All)}` },
+    { label: "DY 2025 (moy. pondérée)", value: dy25Global != null ? (dy25Global*100).toFixed(1) + "%" : "—", sub: "Pondéré · capi flottante", extra: dy24Global != null ? 'DY 2024 : ' + (dy24Global*100).toFixed(1) + '%' : '' },
   ];
 
   document.getElementById('kpiGrid').innerHTML = kpiCards.map(k => `
@@ -1335,13 +1360,14 @@ function renderTable() {
         <td class="num">${fmtCours(d.cours)}</td>
         <td class="num">${fmt(d.capi)}</td>
         <td class="num">${fmt(d.flottant)}</td>
-        <td class="num">${fmt(d.rnpg24)}</td>
         <td class="num">${fmt(d.rnpg25)}</td>
+        <td class="num">${d.rnpg_s1_26 != null ? fmt(d.rnpg_s1_26) : '—'}</td>
+        <td class="num">${d.rnpg26 != null ? fmt(d.rnpg26) : '—'}</td>
         <td class="num">${varStr}</td>
         <td class="num">${fmt(d.ca24)}</td>
         <td class="num">${fmt(d.ca25)}</td>
-        <td class="num"><span class="pe-badge ${getPeClass(d.pe24)}">${d.pe24 ? d.pe24.toFixed(1)+'x' : '—'}</span></td>
-        <td class="num"><span class="pe-badge ${getPeClass(d.pe25)}">${d.pe25 ? d.pe25.toFixed(1)+'x' : '—'}</span></td>
+        <td class="num">${d.pe25 ? `<span class="pe-badge ${getPeClass(d.pe25)}">${fmtPE(d.pe25)}</span>` : '—'}</td>
+        <td class="num">${d.pe26 ? `<span class="pe-badge ${getPeClass(d.pe26)}">${fmtPE(d.pe26)}</span>` : '—'}</td>
         <td class="num">${d.dy24 != null ? (d.dy24*100).toFixed(1)+'%' : '—'}</td>
         <td class="num">${d.dy25 != null ? (d.dy25*100).toFixed(1)+'%' : '—'}</td>
       </tr>`;
@@ -1400,11 +1426,12 @@ function sortAndRender() {
   const sorted = [...filteredData];
   if (val === 'cours') sorted.sort((a,b) => b.cours - a.cours);
   else if (val === 'capi') sorted.sort((a,b) => b.capi - a.capi);
-  else if (val === 'pe24_asc') sorted.sort((a,b) => a.pe24 - b.pe24);
-  else if (val === 'pe24_desc') sorted.sort((a,b) => b.pe24 - a.pe24);
-  else if (val === 'pe25_asc') sorted.sort((a,b) => a.pe25 - b.pe25);
-  else if (val === 'pe25_desc') sorted.sort((a,b) => b.pe25 - a.pe25);
-  else if (val === 'var') sorted.sort((a,b) => (varRNPG(b)||0) - (varRNPG(a)||0));
+  else if (/^pe2[56]_(asc|desc)$/.test(val)) {
+    const f = val.slice(0,4), asc = val.endsWith('asc');
+    // valeurs sans PE toujours en fin de liste
+    sorted.sort((a,b) => (a[f] == null) - (b[f] == null) || (asc ? a[f] - b[f] : b[f] - a[f]));
+  }
+  else if (val === 'var') sorted.sort((a,b) => (varRNPG(a) == null) - (varRNPG(b) == null) || (varRNPG(b) - varRNPG(a)));
   filteredData = sorted;
   renderTable();
 }
@@ -1427,22 +1454,24 @@ function buildCharts() {
       </div>`;
   }).join('');
 
-  // PE chart : PE 2025 uniquement, trié croissant
-  const peData = [...RAW_DATA].filter(d => d.pe25).sort((a,b) => a.pe25 - b.pe25);
-  const maxPE = Math.max(...peData.map(d => d.pe25));
-  document.getElementById('peChart').innerHTML = peData.map(d => {
-    const pct = (d.pe25 / maxPE * 100).toFixed(1);
-    const col = d.pe25 <= 15 ? '#00e5a0' : d.pe25 <= 25 ? '#ffd32a' : '#ff4757';
+  // PE chart : PE 2026e (valeurs ayant publié le S1 2026), trié croissant
+  const emptyMsg = '<div style="color:var(--muted);font-size:12px;padding:12px 0">Aucune valeur publiée pour le S1 2026</div>';
+  const peData = [...RAW_DATA].filter(d => d.pe26).sort((a,b) => a.pe26 - b.pe26);
+  const maxPE = Math.max(...peData.map(d => d.pe26));
+  document.getElementById('peChart').innerHTML = peData.length ? peData.map(d => {
+    const pct = (d.pe26 / maxPE * 100).toFixed(1);
+    const col = d.pe26 <= 15 ? '#00e5a0' : d.pe26 <= 25 ? '#ffd32a' : '#ff4757';
+    const ref = d.pe25 ? ' <span style="color:var(--muted);font-size:10px">(25 : ' + d.pe25.toFixed(1) + 'x)</span>' : '';
     return '<div class="bar-row">' +
       '<span class="bar-label">' + d.ticker + '</span>' +
-      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + col + '">' + d.pe25.toFixed(1) + 'x</div></div>' +
-      '<span class="bar-val">' + d.pe25.toFixed(1) + 'x</span></div>';
-  }).join('');
+      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + col + '">' + d.pe26.toFixed(1) + 'x</div></div>' +
+      '<span class="bar-val">' + d.pe26.toFixed(1) + 'x' + ref + '</span></div>';
+  }).join('') : emptyMsg;
 
   // Var RNPG — toutes les valeurs sans filtre ni troncature
   const varData = RAW_DATA.map(d => ({...d, varR: varRNPG(d)})).filter(d => d.varR !== null).sort((a,b) => b.varR - a.varR);
   const maxVar = Math.max(...varData.map(d=>Math.abs(d.varR)));
-  document.getElementById('varChart').innerHTML = varData.map(d => {
+  document.getElementById('varChart').innerHTML = !varData.length ? emptyMsg : varData.map(d => {
     const pct = (Math.abs(d.varR) / maxVar * 100).toFixed(1);
     const color = d.varR >= 0 ? '#00e5a0' : '#ff4757';
     const sign = d.varR >= 0 ? '+' : '';
@@ -1494,30 +1523,40 @@ function buildCharts() {
 }
 
 // Sectors table
+function sectorStats(titres) {
+  const pub = titres.filter(isPublished);
+  const r25p = pub.reduce((s,d)=>s+(d.rnpg25||0),0);
+  const r26 = pub.reduce((s,d)=>s+d.rnpg26,0);
+  return {
+    count: titres.length,
+    capi: titres.reduce((s,d)=>s+d.capi,0),
+    rnpg25: titres.reduce((s,d)=>s+(d.rnpg25||0),0),
+    ca25: titres.reduce((s,d)=>s+(d.ca25||0),0),
+    pe25: calcPE25Harmonique(titres),
+    pe26: calcPE26Harmonique(pub),
+    nPub: pub.length,
+    varPub: (pub.length && r25p) ? (r26 - r25p) / Math.abs(r25p) * 100 : null,
+    dy24: weightedDY(titres, 'dy24'),
+    dy25: weightedDY(titres, 'dy25')
+  };
+}
+function groupBySector() {
+  const m = {};
+  RAW_DATA.forEach(d => { (m[d.secteur] = m[d.secteur] || []).push(d); });
+  return Object.entries(m).map(([sec, t]) => [sec, sectorStats(t)]).sort((a,b)=>b[1].capi-a[1].capi);
+}
+
 function buildSectorsTable() {
-  const bySectorMap = {};
-  RAW_DATA.forEach(d => {
-    if (!bySectorMap[d.secteur]) bySectorMap[d.secteur] = { count:0, capi:0, rnpg25:0, ca25:0, titres:[] };
-    bySectorMap[d.secteur].count++;
-    bySectorMap[d.secteur].capi += d.capi;
-    bySectorMap[d.secteur].rnpg25 += d.rnpg25||0;
-    bySectorMap[d.secteur].ca25 += d.ca25||0;
-    bySectorMap[d.secteur].titres.push(d);
-  });
   const totalCapi = RAW_DATA.reduce((s,d)=>s+d.capi,0);
-  const sorted = Object.entries(bySectorMap).sort((a,b)=>b[1].capi-a[1].capi);
+  const sorted = groupBySector();
   const maxCapi = sorted[0][1].capi;
-  // Rename for template compatibility
-  const bySector = bySectorMap;
+  const pctStr = v => v != null ? (v*100).toFixed(1)+'%' : '—';
 
   document.getElementById('sectorBody').innerHTML = sorted.map(([sec, v]) => {
     const pct = (v.capi/totalCapi*100).toFixed(1);
-    const pe24Sec = calcPE24Harmonique(v.titres);
-    const pe25Sec2 = calcPE25Harmonique(v.titres);
-    const sectorPE25 = pe24Sec ? pe24Sec.toFixed(1) : '—';
-    const sectorPE = pe25Sec2 ? pe25Sec2.toFixed(1) : '—';
     const color = SECTOR_COLORS[sec] || '#888';
     const barPct = (v.capi / maxCapi * 100).toFixed(0);
+    const varStr = v.varPub == null ? '—' : (v.varPub >= 0 ? `<span class="var-positive">+${v.varPub.toFixed(1)}%</span>` : `<span class="var-negative">${v.varPub.toFixed(1)}%</span>`);
     return `
       <tr>
         <td><span class="sector-tag" style="background:${color}22; color:${color}; border:1px solid ${color}44">${sec}</span></td>
@@ -1526,8 +1565,12 @@ function buildSectorsTable() {
         <td class="num">${pct}%</td>
         <td class="num">${fmt(v.rnpg25)}</td>
         <td class="num">${fmt(v.ca25)}</td>
-        <td class="num">${sectorPE25}x</td>
-        <td class="num">${sectorPE}x</td>
+        <td class="num">${v.nPub}/${v.count}</td>
+        <td class="num">${varStr}</td>
+        <td class="num">${fmtPE(v.pe25)}</td>
+        <td class="num">${fmtPE(v.pe26)}</td>
+        <td class="num">${pctStr(v.dy24)}</td>
+        <td class="num">${pctStr(v.dy25)}</td>
         <td style="min-width:120px">
           <div class="progress-mini"><div class="progress-mini-fill" style="width:${barPct}%"></div></div>
         </td>
@@ -1552,59 +1595,60 @@ function switchTab(name, btn) {
 function exportExcel() {
   const wb = XLSX.utils.book_new();
 
+  const r2 = v => v != null ? parseFloat(v.toFixed(2)) : null;
+  const pc = v => v != null ? parseFloat((v*100).toFixed(2)) : null;
   // Main sheet
   const mainData = RAW_DATA.map(d => ({
     'Code ISIN': d.isin,
     'Société': d.name,
     'Ticker': d.ticker,
     'Secteur': d.secteur,
-    'Cours 13/05/2026 (MAD)': d.cours,
+    'Cours (MAD)': d.cours,
+    'Cours année précédente (MAD)': d.cours_prec,
+    'Nb Titres': d.nb_titres != null ? Math.round(d.nb_titres) : null,
+    'Facteur flottant': d.facteur_flottant,
     'Capitalisation (MAD)': d.capi,
     'Capi Flottante (MAD)': d.flottant,
-    'RNPG 2024 (MAD)': d.rnpg24,
+    'Poids (%)': d.poids != null ? parseFloat((d.poids*100).toFixed(4)) : null,
     'RNPG 2025 (MAD)': d.rnpg25,
-    'Var RNPG 2025/2024 (%)': varRNPG(d) ? parseFloat(varRNPG(d).toFixed(2)) : null,
+    'RNPG S1 2025 (MAD)': d.rnpg_s1_25,
+    'RNPG S1 2026 (MAD)': d.rnpg_s1_26,
+    'RNPG 2026e S1x2 (MAD)': d.rnpg26,
+    'Var RNPG 2026e/2025 (%)': r2(varRNPG(d)),
     'CA 2024 (MAD)': d.ca24,
     'CA 2025 (MAD)': d.ca25,
-    'PE 2024 (harmonique·RNPG24)': d.pe24,
-    'PE 2025 (harmonique·RNPG25)': d.pe25,
-    'DY 2024 (%)': d.dy24 != null ? parseFloat((d.dy24*100).toFixed(2)) : null,
-    'Nb Titres': d.nb_titres != null ? Math.round(d.nb_titres) : null,
-    'Poids (%)': d.poids != null ? parseFloat((d.poids*100).toFixed(4)) : null,
+    'PE 2025': r2(d.pe25),
+    'PE 2026e': r2(d.pe26),
+    'Div 2024 (MAD)': d.div24,
     'Div 2025 (MAD)': d.div25,
-    'Poids MASI (%)': d.poids_masi != null ? parseFloat((d.poids_masi*100).toFixed(4)) : null,
-    'DY 2025 (%)': d.dy25 != null ? parseFloat((d.dy25*100).toFixed(2)) : null
+    'DY 2024 (%)': pc(d.dy24),
+    'DY 2025 (%)': pc(d.dy25)
   }));
   const ws1 = XLSX.utils.json_to_sheet(mainData);
-  ws1['!cols'] = [14,24,12,22,18,20,20,18,18,18,18,18,10,10].map(w=>({wch:w}));
+  ws1['!cols'] = Object.keys(mainData[0]).map(k => ({wch: Math.max(12, k.length + 2)}));
   XLSX.utils.book_append_sheet(wb, ws1, 'Valeurs');
 
   // Sector synthesis
-  const bySectorExp = {};
-  RAW_DATA.forEach(d => {
-    if (!bySectorExp[d.secteur]) bySectorExp[d.secteur] = { count:0, capi:0, rnpg25:0, ca25:0, titres:[] };
-    bySectorExp[d.secteur].count++;
-    bySectorExp[d.secteur].capi += d.capi;
-    bySectorExp[d.secteur].rnpg25 += d.rnpg25||0;
-    bySectorExp[d.secteur].ca25 += d.ca25||0;
-    bySectorExp[d.secteur].titres.push(d);
-  });
   const totalCapi = RAW_DATA.reduce((s,d)=>s+d.capi,0);
-  const secData = Object.entries(bySectorExp).sort((a,b)=>b[1].capi-a[1].capi).map(([sec, v]) => ({
+  const secData = groupBySector().map(([sec, v]) => ({
     'Secteur': sec,
     'Nb valeurs': v.count,
     'Capitalisation (MAD)': v.capi,
     '% total': parseFloat((v.capi/totalCapi*100).toFixed(2)),
     'RNPG 2025 (MAD)': v.rnpg25,
     'CA 2025 (MAD)': v.ca25,
-    'PE 2024 harmonique': (() => { const p = calcPE24Harmonique(v.titres); return p ? parseFloat(p.toFixed(2)) : null; })(),
-    'PE 2025 harmonique': (() => { const p = calcPE25Harmonique(v.titres); return p ? parseFloat(p.toFixed(2)) : null; })()
+    'Publiés S1 2026': v.nPub,
+    'Var RNPG 2026e/2025 périm. constant (%)': r2(v.varPub),
+    'PE 2025 harmonique': r2(v.pe25),
+    'PE 2026e harmonique (publiés)': r2(v.pe26),
+    'DY 2024 (%)': pc(v.dy24),
+    'DY 2025 (%)': pc(v.dy25)
   }));
   const ws2 = XLSX.utils.json_to_sheet(secData);
-  ws2['!cols'] = [22,12,20,12,20,20,14].map(w=>({wch:w}));
+  ws2['!cols'] = Object.keys(secData[0]).map(k => ({wch: Math.max(12, k.length + 2)}));
   XLSX.utils.book_append_sheet(wb, ws2, 'Synthèse Secteurs');
 
-  XLSX.writeFile(wb, 'bourse_casablanca_642026.xlsx');
+  XLSX.writeFile(wb, 'bourse_casablanca_' + new Date().toISOString().slice(0,10) + '.xlsx');
 }
 
 // FILE IMPORT
@@ -1623,45 +1667,60 @@ function loadExcelFile(file) {
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, { defval: null });
 
-      // Détecter dynamiquement la colonne "Cours xx/xx/xxxx"
-      const coursCol = rows.length > 0
-        ? Object.keys(rows[0]).find(k => k.startsWith('Cours') && k !== 'Cours année précédante')
-        : null;
-      // Détecter dynamiquement la colonne "Nombre de titre xx/xx/xxxx"
-      const nbTitresCol = rows.length > 0
-        ? Object.keys(rows[0]).find(k => k.startsWith('Nombre de titre'))
-        : null;
+      const keys = rows.length > 0 ? Object.keys(rows[0]) : [];
+      // Colonne cours : "Dernier cours" ou "Cours xx/xx/xxxx" (hors cours année précédente)
+      const coursCol = keys.find(k => k === 'Dernier cours') || keys.find(k => k.startsWith('Cours') && !k.startsWith('Cours année'));
+      // Colonne "Nombre de titre" (avec ou sans date)
+      const nbTitresCol = keys.find(k => k.startsWith('Nombre de titre'));
+      const num = v => { const n = typeof v === 'number' ? v : parseFloat(v); return isFinite(n) ? n : null; };
+      // Dividendes conservés depuis les données actuelles (les colonnes div/DY du fichier ne sont pas exploitées)
+      const prevByIsin = Object.fromEntries(RAW_DATA.map(d => [d.isin, d]));
 
       const parsed = rows
-        .filter(r => r['Code_isin'] && (r['Libellé'] || r['Libellé_court']) && coursCol && r[coursCol])
+        .filter(r => r['Code_isin'] && (r['Libellé'] || r['Libellé_court']) && coursCol && num(r[coursCol]) > 0)
         .map(r => {
-          const capi = r['Capitalisation'] || 0;
-          const rnpg25 = r['RNPG 2025'] || 0;
-          const rnpg24 = r['RNPG 2024'] || 0;
+          const prev = prevByIsin[r['Code_isin']] || {};
+          const cours = num(r[coursCol]);
+          const nb = nbTitresCol ? num(r[nbTitresCol]) : null;
+          const capiFile = num(r['Capitalisation']) || 0;
+          const capi = capiFile > 0 ? capiFile : (nb ? cours * nb : 0);
+          const capiFlotFile = num(r['Capi flottante']);
+          let ff = (capiFile > 0 && capiFlotFile != null) ? capiFlotFile / capiFile : num(r['Facteur flottant']);
+          if (ff == null) ff = 0;
+          const s126 = num(r['RNPG S1_2026']);
+          // Ligne incohérente (colonnes décalées) : cours × titres sans rapport avec la capitalisation du fichier
+          if (capiFile > 0 && nb && (cours * nb / capiFile > 10 || cours * nb / capiFile < 0.1)) {
+            return prev.isin ? { ...prev, _kept: true } : null;
+          }
           return {
             isin: r['Code_isin'],
-            name: r['Libellé'] || r['Libellé_court'],
-            ticker: r['Libellé_court'] || r['Libellé'],
-            secteur: r['Secteur'] || 'Autre',
-            cours: r[coursCol] || 0,
-            cours_prec: r['Cours année précédante'] != null ? r['Cours année précédante'] : null,
+            name: prev.name || r['Libellé'] || r['Libellé_court'],
+            ticker: prev.ticker || r['Libellé_court'] || r['Libellé'],
+            ric: prev.ric || null,
+            secteur: r['Secteur'] || prev.secteur || 'Autre',
+            cours: cours,
+            cours_prec: num(r['Cours année précédante']),
+            nb_titres: nb,
             capi: capi,
-            flottant: r['Capi flottante'] || 0,
-            facteur_flottant: (r['Facteur flottant'] != null) ? r['Facteur flottant'] : (capi > 0 ? (r['Capi flottante'] || 0) / capi : 0),
-            rnpg24: rnpg24,
-            rnpg25: rnpg25,
-            ca24: r['CA 2024'] || 0,
-            ca25: r['CA 2025'] || 0,
-            nb_titres: nbTitresCol && r[nbTitresCol] != null ? r[nbTitresCol] : null,
-            poids: null, // recalculé après chargement
-            div25: r['div 2025'] != null ? r['div 2025'] : null,
-            poids_masi: r['Poids MASI'] != null ? r['Poids MASI'] : null,
-            dy24: r['DY 2024'] != null ? r['DY 2024'] : null,
-            dy25: r['DY 2025'] != null ? r['DY 2025'] : null,
-            pe24: rnpg24 ? parseFloat((capi / rnpg24).toFixed(2)) : null,
-            pe25: rnpg25 ? parseFloat((capi / rnpg25).toFixed(2)) : null
+            facteur_flottant: ff,
+            flottant: capi * ff,
+            rnpg25: num(r['RNPG 2025']),
+            rnpg_s1_25: num(r['RNPG S1_2025']),
+            rnpg_s1_26: s126,
+            rnpg26: s126 != null ? s126 * 2 : null,
+            ca24: num(r['CA 2024']),
+            ca25: num(r['CA 2025']),
+            div24: prev.div24 != null ? prev.div24 : null,
+            div25: prev.div25 != null ? prev.div25 : null
           };
-        });
+        })
+        .filter(Boolean);
+
+      // Les valeurs absentes du fichier sont conservées (pas de suppression automatique)
+      const inFile = new Set(parsed.map(d => d.isin));
+      RAW_DATA.forEach(d => { if (!inFile.has(d.isin)) parsed.push({ ...d, _kept: true }); });
+      const keptTickers = parsed.filter(d => d._kept).map(d => d.ticker);
+      parsed.forEach(d => delete d._kept);
 
       if (parsed.length === 0) {
         document.getElementById('importStatus').textContent = '⚠ Aucune donnée reconnue — vérifiez les en-têtes du fichier';
@@ -1673,11 +1732,8 @@ function loadExcelFile(file) {
       RAW_DATA.length = 0;
       parsed.forEach(d => RAW_DATA.push(d));
 
-      // Pass 2 : recalculer le poids (flottant) de chaque valeur sur la base du nouveau total
-      const totalFlottantImport = RAW_DATA.reduce((s, d) => s + (d.flottant || 0), 0);
-      if (totalFlottantImport > 0) {
-        RAW_DATA.forEach(d => { d.poids = (d.flottant || 0) / totalFlottantImport; });
-      }
+      // Pass 2 : recalcul global des ratios (PE, DY, poids) sur la base du nouveau total flottant
+      recalcRatios();
 
       filteredData = [...RAW_DATA];
 
@@ -1696,7 +1752,7 @@ function loadExcelFile(file) {
       const today = new Date().toLocaleDateString('fr-FR', {day:'2-digit', month:'long', year:'numeric'});
       document.getElementById('headerSub').textContent = `Tableau de Bord · Valeurs Sélectionnées · ${today}`;
       document.getElementById('headerBadge').textContent = `${parsed.length} valeurs · Données au ${today}`;
-      document.getElementById('importStatus').textContent = `✓ ${parsed.length} valeurs chargées depuis "${file.name}"`;
+      document.getElementById('importStatus').textContent = `✓ ${parsed.length} valeurs chargées depuis "${file.name}"` + (keptTickers.length ? ` · conservées sans mise à jour : ${keptTickers.join(', ')}` : '');
       document.getElementById('importStatus').className = 'import-status ok';
 
     } catch(err) {
@@ -1836,33 +1892,25 @@ async function fetchLiveCours() {
       if (!ticker || !price || price <= 0) return;
       const d = RAW_DATA.find(r => r.ticker === ticker);
       if (!d) return;
+      // Capi et flottant mis à l'échelle du nouveau cours (conserve la base de capitalisation du fichier source)
+      if (d.cours > 0) {
+        const k = price / d.cours;
+        d.capi = d.capi * k;
+        d.flottant = d.flottant * k;
+      }
       d.cours = price;
-      if (d.nb_titres) d.capi = price * d.nb_titres;
-      if (d.nb_titres && d.facteur_flottant) d.flottant = price * d.nb_titres * d.facteur_flottant;
       updated++;
     });
 
     // Passe 2 : recalculer tous les ratios avec les nouvelles capi/flottant/cours
-    const totalFlottantGlobal = RAW_DATA.reduce((s, d) => s + (d.flottant || 0), 0);
-    RAW_DATA.forEach(d => {
-      // PE 2024 et 2025 = capi / résultat net
-      if (d.capi && d.rnpg24) d.pe24 = parseFloat((d.capi / d.rnpg24).toFixed(2));
-      if (d.capi && d.rnpg25) d.pe25 = parseFloat((d.capi / d.rnpg25).toFixed(2));
-      // DY 2025 = div25 / cours actuel
-      if (d.div25 != null && d.cours > 0) d.dy25 = d.div25 / d.cours;
-      // DY 2024 = div25 / cours actuel (même dividende, rendement actualisé au cours du jour)
-      if (d.div25 != null && d.cours > 0) d.dy24 = d.div25 / d.cours;
-      // Poids flottant (= poids MASI après actualisation)
-      if (totalFlottantGlobal > 0) {
-        d.poids      = (d.flottant || 0) / totalFlottantGlobal;
-        d.poids_masi = d.poids;
-      }
-    });
+    recalcRatios();
 
     if (updated > 0) {
       filteredData = [...RAW_DATA];
       buildKPIs();
-      renderTable();
+      filterTable();
+      buildCharts();
+      buildSectorsTable();
       if (statusEl) {
         statusEl.textContent = `✓ ${updated} cours mis à jour · Séance du ${data.date} à ${data.time}`;
         statusEl.className = 'live-cours-status ok';
@@ -1875,12 +1923,10 @@ async function fetchLiveCours() {
       // Persister l'état actualisé dans localStorage
       try {
         const snapshot = {
+          dataVersion: DATA_VERSION,
           date: data.date, time: data.time,
           cours: Object.fromEntries(RAW_DATA.map(d => [d.ticker, {
-            cours: d.cours, capi: d.capi, flottant: d.flottant,
-            pe24: d.pe24, pe25: d.pe25,
-            dy24: d.dy24, dy25: d.dy25,
-            poids: d.poids, poids_masi: d.poids_masi
+            cours: d.cours, capi: d.capi, flottant: d.flottant
           }]))
         };
         localStorage.setItem('bourseSnapshot', JSON.stringify(snapshot));
@@ -1935,20 +1981,16 @@ function configureUrl() {
 
 // INIT
 function applySnapshot(snap) {
-  if (!snap || !snap.cours) return false;
+  // Snapshot antérieur aux données intégrées (ou sans version) : ignoré
+  if (!snap || !snap.cours || snap.dataVersion !== DATA_VERSION) return false;
   RAW_DATA.forEach(d => {
     const v = snap.cours[d.ticker];
     if (!v) return;
-    if (v.cours       != null) d.cours       = v.cours;
-    if (v.capi        != null) d.capi        = v.capi;
-    if (v.flottant    != null) d.flottant    = v.flottant;
-    if (v.pe24        != null) d.pe24        = v.pe24;
-    if (v.pe25        != null) d.pe25        = v.pe25;
-    if (v.dy24        != null) d.dy24        = v.dy24;
-    if (v.dy25        != null) d.dy25        = v.dy25;
-    if (v.poids       != null) d.poids       = v.poids;
-    if (v.poids_masi  != null) d.poids_masi  = v.poids_masi;
+    if (v.cours    != null) d.cours    = v.cours;
+    if (v.capi     != null) d.capi     = v.capi;
+    if (v.flottant != null) d.flottant = v.flottant;
   });
+  recalcRatios();
   return true;
 }
 
